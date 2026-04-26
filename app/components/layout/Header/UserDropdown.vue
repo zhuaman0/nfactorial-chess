@@ -1,102 +1,138 @@
 <template>
-  <!-- Avatar trigger button -->
+  <!-- Avatar trigger -->
   <button
     type="button"
-    class="id-card-trigger"
+    class="flex items-center justify-center w-9 h-9 rounded-xl hover:bg-slate-100 transition-colors p-0.5"
     @click="open = true"
-    aria-label="Open profile card"
+    aria-label="Open profile"
   >
     <UiAvatar :src="avatarSrc" :fallback="profileStore.initials" size="sm" />
   </button>
 
-  <!-- Slide-in panel via Teleport -->
   <Teleport to="body">
     <!-- Backdrop -->
     <Transition name="backdrop">
-      <div
-        v-if="open"
-        class="id-backdrop"
-        @click="open = false"
-      />
+      <div v-if="open" class="fixed inset-0 z-[998] bg-slate-950/60 backdrop-blur-sm" @click="open = false" />
     </Transition>
 
     <!-- Panel -->
     <Transition name="panel">
-      <div v-if="open" class="id-panel" role="dialog" aria-modal="true">
+      <div v-if="open" class="fixed top-0 right-0 bottom-0 z-[999] w-[320px] max-w-[95vw] flex flex-col bg-slate-950 border-l border-white/8 shadow-2xl overflow-y-auto" role="dialog" aria-modal="true">
 
-        <!-- Close button -->
-        <button class="id-close" @click="open = false" aria-label="Close">
-          <span>✕</span>
-        </button>
+        <!-- Close -->
+        <button
+          class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 flex items-center justify-center text-sm transition-all"
+          @click="open = false"
+          aria-label="Close"
+        >✕</button>
 
-        <!-- ── Avatar + Name ── -->
-        <div class="id-hero">
-          <div class="id-avatar-ring">
-            <UiAvatar :src="avatarSrc" :fallback="profileStore.initials" size="lg" class="id-avatar" />
-          </div>
-          <h2 class="id-name">{{ profileStore.fullName || 'Player' }}</h2>
-          <p class="id-email">{{ user?.email }}</p>
-          <div class="id-level-badge">
-            <span>⭐</span> Level {{ userLevel }} · {{ levelTitle }}
-          </div>
-        </div>
-
-        <!-- ── XP Bar ── -->
-        <div class="id-xp-section">
-          <div class="id-xp-labels">
-            <span>XP Progress</span>
-            <span>{{ xpCurrent }} / {{ xpNext }} XP</span>
-          </div>
-          <div class="id-xp-track">
-            <div class="id-xp-fill" :style="{ width: xpPercent + '%' }">
-              <div class="id-xp-glow" />
+        <!-- ── Hero ──────────────────────────────────────────────────── -->
+        <div class="relative overflow-hidden px-6 pt-10 pb-8 bg-gradient-to-br from-orange-600 via-amber-500 to-orange-500">
+          <div class="absolute inset-0 opacity-10 pointer-events-none" :style="chessBoardBg"></div>
+          <div class="absolute -top-8 -right-8 w-40 h-40 bg-white/15 rounded-full blur-2xl pointer-events-none"></div>
+          <div class="relative flex flex-col items-center text-center gap-3">
+            <div class="ring-4 ring-white/30 rounded-full shadow-2xl">
+              <UiAvatar :src="avatarSrc" :fallback="profileStore.initials" size="lg" />
+            </div>
+            <div>
+              <h2 class="text-white font-extrabold text-xl leading-tight">{{ profileStore.fullName || 'Player' }}</h2>
+              <p class="text-orange-100/80 text-xs mt-0.5">{{ user?.email }}</p>
+            </div>
+            <div class="flex items-center gap-2 bg-white/15 border border-white/20 rounded-full px-4 py-1.5 text-xs font-bold text-white">
+              <span>⭐</span> Level {{ userLevel }} · {{ levelTitle }}
             </div>
           </div>
-          <p class="id-xp-hint">{{ xpNext - xpCurrent }} XP until Level {{ userLevel + 1 }}</p>
         </div>
 
-        <!-- ── Streak ── -->
-        <div class="id-streak">
-          <span class="id-streak-icon">🔥</span>
-          <div>
-            <p class="id-streak-num">{{ streakDays }} days</p>
-            <p class="id-streak-label">Win streak</p>
+        <!-- ── XP Bar ─────────────────────────────────────────────────── -->
+        <div class="px-6 py-5 border-b border-white/8">
+          <div class="flex justify-between text-xs font-semibold mb-2">
+            <span class="text-slate-400">XP Progress</span>
+            <span class="text-orange-400">{{ xpCurrent }} / {{ xpNext }} XP</span>
           </div>
-          <div class="id-streak-dots">
-            <span
-              v-for="i in 7"
-              :key="i"
-              class="id-streak-dot"
-              :class="{ active: i <= streakDays }"
-            />
+          <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-all duration-700 relative"
+              :style="{ width: xpPercent + '%' }"
+            >
+              <div class="absolute right-0 top-0 bottom-0 w-4 bg-white/30 blur-sm rounded-full"></div>
+            </div>
+          </div>
+          <p class="text-slate-600 text-xs mt-1.5 text-right">{{ xpNext - xpCurrent }} XP until Level {{ userLevel + 1 }}</p>
+        </div>
+
+        <!-- ── Streak ─────────────────────────────────────────────────── -->
+        <div class="px-6 py-4 border-b border-white/8">
+          <div class="flex items-center gap-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl px-4 py-3">
+            <span class="text-3xl leading-none">🔥</span>
+            <div class="flex-1">
+              <p class="text-orange-400 font-black text-lg leading-none">{{ streakDays }} days</p>
+              <p class="text-slate-500 text-xs mt-0.5">Current streak</p>
+            </div>
+            <div class="flex gap-1">
+              <span
+                v-for="i in 7"
+                :key="i"
+                class="w-2 h-2 rounded-full transition-all"
+                :class="i <= streakDays ? 'bg-orange-500 shadow-[0_0_6px_#f97316]' : 'bg-white/15'"
+              />
+            </div>
           </div>
         </div>
 
-        <!-- ── Action buttons ── -->
-        <div class="id-actions">
-          <NuxtLink to="/play" class="id-action-btn arena" @click="open = false">
-            <span class="id-action-icon">⚔️</span>
-            <span class="id-action-label">Arena</span>
-            <span class="id-action-sub">Play now</span>
-          </NuxtLink>
+        <!-- ── Quick stats ────────────────────────────────────────────── -->
+        <div class="px-6 py-4 border-b border-white/8">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="bg-white/5 border border-white/8 rounded-2xl p-3 text-center">
+              <p class="text-white font-black text-lg leading-none">{{ profileStore.profile?.points ?? 0 }}</p>
+              <p class="text-slate-500 text-[10px] mt-1 uppercase tracking-wide">XP</p>
+            </div>
+            <div class="bg-white/5 border border-white/8 rounded-2xl p-3 text-center">
+              <p class="text-white font-black text-lg leading-none">{{ friendsStore.friends.length }}</p>
+              <p class="text-slate-500 text-[10px] mt-1 uppercase tracking-wide">Friends</p>
+            </div>
+            <div class="bg-white/5 border border-white/8 rounded-2xl p-3 text-center">
+              <p class="text-white font-black text-lg leading-none">{{ questsStore.completedCount }}</p>
+              <p class="text-slate-500 text-[10px] mt-1 uppercase tracking-wide">Quests</p>
+            </div>
+          </div>
+        </div>
 
-          <NuxtLink to="/profile" class="id-action-btn inventory" @click="open = false">
-            <span class="id-action-icon">🎒</span>
-            <span class="id-action-label">Inventory</span>
-            <span class="id-action-sub">Skins & themes</span>
-          </NuxtLink>
-
-          <NuxtLink to="/leaderboard" class="id-action-btn glory" @click="open = false">
-            <span class="id-action-icon">🏆</span>
-            <span class="id-action-label">Hall of Fame</span>
-            <span class="id-action-sub">Leaderboard</span>
+        <!-- ── Nav actions ────────────────────────────────────────────── -->
+        <div class="px-6 py-4 flex flex-col gap-2 flex-1">
+          <NuxtLink
+            v-for="item in navItems"
+            :key="item.to"
+            :to="item.to"
+            class="flex items-center gap-4 px-4 py-3.5 rounded-2xl border transition-all duration-150 group"
+            :class="isActive(item.to)
+              ? 'bg-orange-500/15 border-orange-500/30 text-white'
+              : 'bg-white/5 border-white/8 text-slate-300 hover:bg-white/10 hover:border-white/15'"
+            @click="open = false"
+          >
+            <span class="text-xl w-7 text-center flex-shrink-0">{{ item.icon }}</span>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm leading-tight">{{ item.label }}</p>
+              <p class="text-xs mt-0.5" :class="isActive(item.to) ? 'text-orange-300/70' : 'text-slate-600'">{{ item.sub }}</p>
+            </div>
+            <svg class="w-4 h-4 opacity-30 group-hover:opacity-60 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
           </NuxtLink>
         </div>
 
-        <!-- ── Sign out ── -->
-        <button class="id-signout" @click="handleLogout">
-          <span>🚪</span> Sign Out
-        </button>
+        <!-- ── Sign out ───────────────────────────────────────────────── -->
+        <div class="px-6 py-5 border-t border-white/8">
+          <button
+            class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 hover:border-red-500/40 font-semibold text-sm transition-all"
+            @click="handleLogout"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Sign Out
+          </button>
+        </div>
 
       </div>
     </Transition>
@@ -105,28 +141,45 @@
 
 <script setup lang="ts">
 import { useProfileStore } from '~/stores/profile'
-import { useAuthStore } from '~/stores/auth'
+import { useAuthStore }    from '~/stores/auth'
+import { useFriendsStore } from '~/stores/friends'
+import { useQuestsStore }  from '~/stores/quests'
 
 const profileStore = useProfileStore()
-const authStore = useAuthStore()
-const user = useSupabaseUser()
-const open = ref(false)
+const authStore    = useAuthStore()
+const friendsStore = useFriendsStore()
+const questsStore  = useQuestsStore()
+const user  = useSupabaseUser()
+const route = useRoute()
+const open  = ref(false)
 
 const avatarSrc = computed(() => {
   const meta = user.value?.user_metadata || {}
   return profileStore.avatarUrl || meta.picture || meta.avatar_url || ''
 })
 
-// Mock XP / level data (swap with real store values when ready)
-const userLevel = ref(5)
-const levelTitle = ref('Brave Pawn')
-const xpCurrent = ref(3200)
-const xpNext = ref(5000)
-const streakDays = ref(4)
+const chessBoardBg = {
+  backgroundImage: `repeating-conic-gradient(#ffffff 0% 25%, transparent 0% 50%)`,
+  backgroundSize: '40px 40px',
+}
 
-const xpPercent = computed(() =>
-  Math.min(100, Math.round((xpCurrent.value / xpNext.value) * 100))
-)
+const userLevel  = ref(5)
+const levelTitle = ref('Brave Pawn')
+const xpCurrent  = ref(3200)
+const xpNext     = ref(5000)
+const streakDays = ref(4)
+const xpPercent  = computed(() => Math.min(100, Math.round((xpCurrent.value / xpNext.value) * 100)))
+
+const navItems = [
+  { icon: '🏠', label: 'Home',        sub: 'Dashboard & overview',   to: '/'           },
+  { icon: '⚔️', label: 'Play Chess',  sub: 'Start a new game',        to: '/play'       },
+  { icon: '📋', label: 'Quests',      sub: 'Daily challenges',        to: '/quests'     },
+  { icon: '🏆', label: 'Leaderboard', sub: 'Global rankings',         to: '/leaderboard'},
+  { icon: '👥', label: 'Players',     sub: 'Find & connect',          to: '/friends'    },
+  { icon: '👤', label: 'Profile',     sub: 'Edit your info & avatar', to: '/profile'    },
+]
+
+const isActive = (to: string) => to === '/' ? route.path === '/' : route.path.startsWith(to)
 
 const handleLogout = async () => {
   open.value = false
@@ -134,7 +187,14 @@ const handleLogout = async () => {
   navigateTo('/login')
 }
 
-// Close on Escape
+onMounted(async () => {
+  await Promise.all([
+    profileStore.fetchProfile(),
+    friendsStore.fetchAll(),
+    questsStore.fetchQuests(),
+  ])
+})
+
 onMounted(() => {
   const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') open.value = false }
   window.addEventListener('keydown', onKey)
@@ -143,251 +203,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ── Trigger ─────────────────────────────────────────── */
-.id-card-trigger {
-  display: flex;
-  align-items: center;
-  padding: 4px;
-  border-radius: 12px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.id-card-trigger:hover { background: rgba(0,0,0,0.07); }
-
-/* ── Backdrop ────────────────────────────────────────── */
-.id-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 998;
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(4px);
-}
-.backdrop-enter-active, .backdrop-leave-active { transition: opacity 0.3s ease; }
+.backdrop-enter-active, .backdrop-leave-active { transition: opacity 0.25s ease; }
 .backdrop-enter-from, .backdrop-leave-to { opacity: 0; }
 
-/* ── Panel ───────────────────────────────────────────── */
-.id-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 999;
-  width: 340px;
-  max-width: 95vw;
-  background: #ffffff;
-  box-shadow: -8px 0 40px rgba(0,0,0,0.18);
-  border-left: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  padding: 28px 24px 24px;
-  overflow-y: auto;
-  gap: 20px;
-}
-.panel-enter-active, .panel-leave-active { transition: transform 0.35s cubic-bezier(.4,0,.2,1); }
+.panel-enter-active, .panel-leave-active { transition: transform 0.3s cubic-bezier(.4,0,.2,1); }
 .panel-enter-from, .panel-leave-to { transform: translateX(100%); }
 .panel-enter-to, .panel-leave-from { transform: translateX(0); }
-
-/* ── Close ───────────────────────────────────────────── */
-.id-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #64748b;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, color 0.15s;
-}
-.id-close:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
-
-/* ── Hero ────────────────────────────────────────────── */
-.id-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding-top: 8px;
-  gap: 6px;
-}
-.id-avatar-ring {
-  padding: 4px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6, #10b981);
-  margin-bottom: 4px;
-}
-.id-avatar { display: block; }
-.id-name {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0;
-}
-.id-email {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  margin: 0;
-}
-.id-level-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: linear-gradient(135deg, #eff6ff, #f0fdf4);
-  border: 1px solid #bfdbfe;
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #1d4ed8;
-  margin-top: 2px;
-}
-
-/* ── XP Bar ──────────────────────────────────────────── */
-.id-xp-section { display: flex; flex-direction: column; gap: 6px; }
-.id-xp-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #64748b;
-}
-.id-xp-track {
-  height: 10px;
-  background: #e2e8f0;
-  border-radius: 999px;
-  overflow: hidden;
-}
-.id-xp-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-  border-radius: 999px;
-  position: relative;
-  transition: width 0.8s cubic-bezier(.4,0,.2,1);
-}
-.id-xp-glow {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 20px;
-  background: rgba(255,255,255,0.5);
-  filter: blur(4px);
-  border-radius: 50%;
-}
-.id-xp-hint {
-  font-size: 0.68rem;
-  color: #94a3b8;
-  margin: 0;
-  text-align: right;
-}
-
-/* ── Streak ──────────────────────────────────────────── */
-.id-streak {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: linear-gradient(135deg, #fff7ed, #fef3c7);
-  border: 1px solid #fed7aa;
-  border-radius: 16px;
-  padding: 12px 16px;
-}
-.id-streak-icon { font-size: 1.8rem; line-height: 1; }
-.id-streak-num { font-size: 1.1rem; font-weight: 700; color: #ea580c; margin: 0; }
-.id-streak-label { font-size: 0.7rem; color: #9a3412; margin: 0; font-weight: 500; }
-.id-streak-dots {
-  display: flex;
-  gap: 5px;
-  margin-left: auto;
-  align-items: center;
-}
-.id-streak-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #fed7aa;
-  transition: background 0.2s;
-}
-.id-streak-dot.active { background: #f97316; box-shadow: 0 0 6px #f97316; }
-
-/* ── Actions ─────────────────────────────────────────── */
-.id-actions { display: flex; flex-direction: column; gap: 10px; }
-
-.id-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-  border-radius: 16px;
-  text-decoration: none;
-  border: 1.5px solid transparent;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.id-action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-}
-.id-action-btn:active { transform: translateY(0); }
-
-.id-action-btn.arena {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border-color: #bfdbfe;
-}
-.id-action-btn.arena:hover { border-color: #3b82f6; }
-
-.id-action-btn.inventory {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border-color: #bbf7d0;
-}
-.id-action-btn.inventory:hover { border-color: #10b981; }
-
-.id-action-btn.glory {
-  background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
-  border-color: #fde68a;
-}
-.id-action-btn.glory:hover { border-color: #f59e0b; }
-
-.id-action-icon { font-size: 1.8rem; line-height: 1; }
-.id-action-label {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #0f172a;
-  display: block;
-  line-height: 1.2;
-}
-.id-action-sub {
-  font-size: 0.7rem;
-  color: #64748b;
-  font-weight: 500;
-  display: block;
-}
-
-/* ── Sign Out ────────────────────────────────────────── */
-.id-signout {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 11px;
-  border-radius: 12px;
-  border: 1.5px solid #fecaca;
-  background: #fff5f5;
-  color: #dc2626;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-  margin-top: auto;
-}
-.id-signout:hover { background: #fee2e2; border-color: #dc2626; }
 </style>

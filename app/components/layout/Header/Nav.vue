@@ -10,12 +10,6 @@
         : 'text-slate-900/100'"
     >
       {{ item.label }}
-      <span
-        v-if="item.badge === 'friends' && (friendsStore.pendingInCount || chatStore.totalUnread)"
-        class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full text-slate-900/100 text-[10px] font-bold flex items-center justify-center"
-      >
-        {{ friendsStore.pendingInCount + chatStore.totalUnread }}
-      </span>
     </NuxtLink>
   </nav>
 </template>
@@ -33,7 +27,8 @@ const items = [
   { label: 'Quests',      to: '/quests',      badge: null },
   { label: 'Leaderboard', to: '/leaderboard', badge: null },
   { label: 'Play Chess',  to: '/play',        badge: null },
-  { label: 'Friends',     to: '/friends',     badge: 'friends' },
+  { label: 'Players',     to: '/friends',     badge: null },
+  { label: 'Tournaments', to: '/tournaments', badge: null },
 ]
 
 const isActive = (to: string) =>

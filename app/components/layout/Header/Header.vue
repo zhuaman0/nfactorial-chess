@@ -11,7 +11,10 @@
 
       <div class="flex items-center gap-2">
         <LayoutHeaderAuth v-if="!user" />
-        <LayoutHeaderUserDropdown v-else />
+        <template v-else>
+          <LayoutHeaderNotificationBell />
+          <LayoutHeaderUserDropdown />
+        </template>
       </div>
     </div>
   </header>
