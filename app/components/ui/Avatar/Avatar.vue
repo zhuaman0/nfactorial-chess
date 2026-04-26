@@ -33,13 +33,14 @@ const props = defineProps({
     default: '?'
   },
   size: {
-    type: String as PropType<'sm' | 'md' | 'lg' | 'xl'>,
+    type: String as PropType<'xs' | 'sm' | 'md' | 'lg' | 'xl'>,
     default: 'md'
   }
 })
 
 const sizeClasses = computed(() => {
   const sizes: Record<string, string> = {
+    xs: 'w-6 h-6',
     sm: 'w-8 h-8',
     md: 'w-12 h-12',
     lg: 'w-20 h-20',
@@ -50,6 +51,7 @@ const sizeClasses = computed(() => {
 
 const textSizeClass = computed(() => {
   const sizes: Record<string, string> = {
+    xs: 'text-[10px]',
     sm: 'text-xs',
     md: 'text-sm',
     lg: 'text-xl',

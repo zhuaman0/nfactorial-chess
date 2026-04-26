@@ -34,7 +34,7 @@
         <!-- Messages -->
         <div
           ref="messagesEl"
-          class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-900/95 backdrop-blur-xl"
+          class="flex-1 overflow-y-auto p-3 space-y-1 bg-slate-900/95 backdrop-blur-xl"
           style="min-height: 320px; max-height: 380px"
         >
           <div v-if="chatStore.loading" class="flex justify-center pt-8">
@@ -49,17 +49,26 @@
             <div
               v-for="msg in chatStore.messages"
               :key="msg.id"
-              class="flex"
-              :class="msg.sender_id === myId ? 'justify-end' : 'justify-start'"
+              class="flex items-end gap-2"
+              :class="isMe(msg) ? 'flex-row-reverse' : 'flex-row'"
             >
+              <!-- Avatar (always shown, on the outer side) -->
+              <UiAvatar
+                :src="isMe(msg) ? myAvatar : chatStore.openFriend?.avatar_url"
+                :fallback="isMe(msg) ? myInitials : (chatStore.openFriend?.initials ?? '?')"
+                size="xs"
+                class="shrink-0 mb-0.5"
+              />
+
+              <!-- Bubble -->
               <div
-                class="max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed break-words"
-                :class="msg.sender_id === myId
+                class="max-w-[68%] px-3 py-2 rounded-2xl text-sm leading-relaxed break-words"
+                :class="isMe(msg)
                   ? 'bg-blue-600 text-white rounded-br-sm'
                   : 'bg-slate-700 text-slate-100 rounded-bl-sm'"
               >
                 {{ msg.content }}
-                <div class="text-[10px] mt-0.5 opacity-60 text-right">
+                <div class="text-[10px] mt-0.5 opacity-60 text-right tabular-nums">
                   {{ formatTime(msg.created_at) }}
                 </div>
               </div>
@@ -94,13 +103,31 @@
 
 <script setup lang="ts">
 import { useChatStore } from '~/stores/chat'
+import { useProfileStore } from '~/stores/profile'
 
-const chatStore = useChatStore()
-const user      = useSupabaseUser()
-const myId      = computed(() => user.value?.id ?? '')
+const chatStore    = useChatStore()
+const profileStore = useProfileStore()
+
+const myId       = ref('')
+const myAvatar   = ref('')
+const myInitials = ref('?')
 
 const draft      = ref('')
 const messagesEl = ref<HTMLElement | null>(null)
+
+// Get the real user ID from the session — useSupabaseUser() is unreliable here
+onMounted(async () => {
+  const supabase = useSupabaseClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  myId.value = session?.user?.id ?? ''
+
+  // Avatar: prefer profile store, fall back to OAuth metadata
+  const meta = session?.user?.user_metadata || {}
+  myAvatar.value   = profileStore.avatarUrl || meta.picture || meta.avatar_url || ''
+  myInitials.value = profileStore.initials || '?'
+})
+
+const isMe = (msg: { sender_id: string }) => msg.sender_id === myId.value
 
 const send = async () => {
   if (!draft.value.trim()) return
@@ -110,18 +137,14 @@ const send = async () => {
 }
 
 const formatTime = (iso: string) => {
-  const d = new Date(iso)
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-// Auto-scroll to bottom when messages change
 watch(
   () => chatStore.messages.length,
   async () => {
     await nextTick()
-    if (messagesEl.value) {
-      messagesEl.value.scrollTop = messagesEl.value.scrollHeight
-    }
+    if (messagesEl.value) messagesEl.value.scrollTop = messagesEl.value.scrollHeight
   }
 )
 </script>

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { Chess, type Square, type Move } from 'chess.js'
 
-export type Difficulty = 'easy' | 'medium' | 'hard'
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'ai'
 
 export const useChessStore = defineStore('chess', {
   state: () => ({
@@ -110,7 +110,7 @@ export const useChessStore = defineStore('chess', {
           .insert({
             user_id: user.value.id,
             white_name: 'You',
-            black_name: `Stockfish (${this.difficulty})`,
+            black_name: this.difficulty === 'ai' ? 'Grandmaster AI' : `Stockfish (${this.difficulty})`,
             winner,
             result,
             moves: this.moveHistory,

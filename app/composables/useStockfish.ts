@@ -11,6 +11,7 @@ const DEPTH_MAP: Record<string, number> = {
   easy:   2,
   medium: 6,
   hard:   12,
+  ai:     18,
 }
 
 export function useStockfish() {
@@ -56,7 +57,7 @@ export function useStockfish() {
 
   function getBestMove(
     fen: string,
-    difficulty: 'easy' | 'medium' | 'hard' = 'medium'
+    difficulty: 'easy' | 'medium' | 'hard' | 'ai' = 'medium'
   ): Promise<StockfishMove | null> {
     return new Promise((resolve) => {
       if (!worker.value || !isReady.value) {
