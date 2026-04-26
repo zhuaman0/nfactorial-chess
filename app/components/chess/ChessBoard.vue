@@ -2,35 +2,41 @@
   <div class="chess-container flex flex-col items-center">
     <!-- Board -->
     <div
-      class="relative grid grid-cols-8 grid-rows-8 w-full max-w-[600px] aspect-square rounded-lg shadow-2xl overflow-hidden border-4 border-slate-700"
+      class="relative grid grid-cols-8 grid-rows-8 w-full max-w-[600px] aspect-square rounded-lg shadow-2xl overflow-hidden border-4"
+      :style="{ borderColor: theme.dark }"
       @contextmenu.prevent
     >
       <template v-for="(row, rowIndex) in board" :key="rowIndex">
         <div
           v-for="(square, colIndex) in row"
           :key="colIndex"
+          class="relative flex items-center justify-center transition-colors duration-150"
           :class="[
-            'relative flex items-center justify-center transition-colors duration-150',
             disabled ? 'cursor-not-allowed' : 'cursor-pointer',
-            (rowIndex + colIndex) % 2 === 0 ? 'bg-[#EBECD0]' : 'bg-[#779556]',
-            isSelected(rowIndex, colIndex) ? '!bg-yellow-200/60' : '',
+            isSelected(rowIndex, colIndex) ? 'selected-square' : '',
             isPossibleMove(rowIndex, colIndex)
-              ? 'after:content-[\'\'] after:absolute after:w-4 after:h-4 after:bg-black/10 after:rounded-full'
+              ? 'after:content-[\'\'] after:absolute after:w-4 after:h-4 after:bg-black/20 after:rounded-full after:z-10'
               : '',
             isPossibleCapture(rowIndex, colIndex)
-              ? 'after:content-[\'\'] after:absolute after:w-full after:h-full after:border-4 after:border-black/10 after:rounded-full'
+              ? 'after:content-[\'\'] after:absolute after:w-full after:h-full after:border-4 after:border-black/20 after:rounded-full after:z-10'
               : '',
           ]"
+          :style="{
+            backgroundColor: squareColor(rowIndex, colIndex),
+            boxShadow: isSelected(rowIndex, colIndex) ? 'inset 0 0 0 3px rgba(255,220,0,0.7)' : '',
+          }"
           @click="!disabled && handleSquareClick(rowIndex, colIndex)"
         >
           <!-- Coordinates -->
           <span
             v-if="colIndex === 0"
-            :class="['absolute top-0.5 left-0.5 text-[10px] font-bold select-none', (rowIndex + colIndex) % 2 === 0 ? 'text-[#779556]' : 'text-[#EBECD0]']"
+            class="absolute top-0.5 left-0.5 text-[10px] font-bold select-none z-10"
+            :style="{ color: coordColor(rowIndex, colIndex) }"
           >{{ 8 - rowIndex }}</span>
           <span
             v-if="rowIndex === 7"
-            :class="['absolute bottom-0.5 right-0.5 text-[10px] font-bold select-none', (rowIndex + colIndex) % 2 === 0 ? 'text-[#779556]' : 'text-[#EBECD0]']"
+            class="absolute bottom-0.5 right-0.5 text-[10px] font-bold select-none z-10"
+            :style="{ color: coordColor(rowIndex, colIndex) }"
           >{{ String.fromCharCode(97 + colIndex) }}</span>
 
           <!-- Piece -->
@@ -42,10 +48,10 @@
       <Transition name="fade">
         <div
           v-if="chessStore.isAIThinking"
-          class="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3 z-10"
+          class="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3 z-20"
         >
           <div class="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-          <span class="text-white font-semibold text-sm tracking-wide drop-shadow">Stockfish is thinking…</span>
+          <span class="text-white font-semibold text-sm tracking-wide drop-shadow">Thinking…</span>
         </div>
       </Transition>
     </div>
@@ -58,7 +64,7 @@
           :class="chessStore.turn === 'w' ? 'bg-white shadow-[0_0_8px_white]' : 'bg-slate-900 shadow-[0_0_8px_#000]'"
         ></div>
         <span class="text-white text-sm font-medium">
-          {{ chessStore.isAIThinking ? 'AI is thinking…' : chessStore.turn === 'w' ? "Your turn" : "AI's turn" }}
+          {{ chessStore.isAIThinking ? 'Opponent thinking…' : chessStore.turn === 'w' ? 'Your turn' : "Opponent's turn" }}
         </span>
         <span v-if="chessStore.isCheck && !chessStore.isGameOver" class="text-red-400 text-xs font-bold uppercase tracking-wider">Check!</span>
       </div>
@@ -90,6 +96,7 @@
 
 <script setup lang="ts">
 import { useChessStore } from '~/stores/chess'
+import { useCustomizationStore, ARENA_THEMES } from '~/stores/customization'
 import ChessPiece from './ChessPiece.vue'
 
 defineProps({
@@ -97,7 +104,16 @@ defineProps({
 })
 
 const chessStore = useChessStore()
+const customization = useCustomizationStore()
 const board = computed(() => chessStore.board)
+
+const theme = computed(() => ARENA_THEMES[customization.theme])
+
+const squareColor = (row: number, col: number) =>
+  (row + col) % 2 === 0 ? theme.value.light : theme.value.dark
+
+const coordColor = (row: number, col: number) =>
+  (row + col) % 2 === 0 ? theme.value.dark : theme.value.light
 
 const coordsToSquare = (row: number, col: number) =>
   `${String.fromCharCode(97 + col)}${8 - row}`

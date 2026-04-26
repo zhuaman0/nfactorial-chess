@@ -9,15 +9,25 @@ export interface Message {
   created_at: string
 }
 
+async function getMyId(): Promise<string | null> {
+  try {
+    const supabase = useSupabaseClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.user?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 export const useChatStore = defineStore('chat', {
   state: () => ({
-    openFriend:  null as FriendProfile | null,
-    messages:    [] as Message[],
-    loading:     false,
-    sending:     false,
-    minimized:   false,
-    unread:      {} as Record<string, number>, // friendId → count
-    _channel:    null as any,
+    openFriend: null as FriendProfile | null,
+    messages:   [] as Message[],
+    loading:    false,
+    sending:    false,
+    minimized:  false,
+    unread:     {} as Record<string, number>,
+    _channel:   null as any,
   }),
 
   getters: {
@@ -25,14 +35,11 @@ export const useChatStore = defineStore('chat', {
   },
 
   actions: {
-    // ── open chat with a friend ──────────────────────────────────────────
+    // ── Open chat with a friend ───────────────────────────────────────────
     async openWith(friend: FriendProfile) {
       this.openFriend = friend
       this.minimized  = false
-      // clear unread for this friend
-      if (this.unread[friend.id]) {
-        this.unread[friend.id] = 0
-      }
+      if (this.unread[friend.id]) this.unread[friend.id] = 0
       await this.fetchMessages(friend.id)
     },
 
@@ -44,22 +51,19 @@ export const useChatStore = defineStore('chat', {
 
     toggleMinimize() {
       this.minimized = !this.minimized
-      // clear unread when expanding
       if (!this.minimized && this.openFriend) {
         this.unread[this.openFriend.id] = 0
       }
     },
 
-    // ── load history ─────────────────────────────────────────────────────
+    // ── Load message history ──────────────────────────────────────────────
     async fetchMessages(friendId: string) {
       const supabase = useSupabaseClient()
-      const user     = useSupabaseUser()
-      if (!user.value) return
+      const myId     = await getMyId()
+      if (!myId) return
 
       this.loading  = true
       this.messages = []
-      const myId    = user.value.id
-
       try {
         const { data, error } = await supabase
           .from('messages')
@@ -78,18 +82,18 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
-    // ── send a message ────────────────────────────────────────────────────
+    // ── Send a message ────────────────────────────────────────────────────
     async sendMessage(content: string) {
       const supabase = useSupabaseClient()
-      const user     = useSupabaseUser()
-      if (!user.value || !this.openFriend || !content.trim()) return
+      const myId     = await getMyId()
+      if (!myId || !this.openFriend || !content.trim()) return
 
       this.sending = true
       try {
         const { data, error } = await supabase
           .from('messages')
           .insert({
-            sender_id:   user.value.id,
+            sender_id:   myId,
             receiver_id: this.openFriend.id,
             content:     content.trim(),
           } as never)
@@ -97,7 +101,6 @@ export const useChatStore = defineStore('chat', {
           .single()
 
         if (error) throw error
-        // Optimistically add (realtime will also fire, dedupe by id)
         if (data && !this.messages.find(m => m.id === (data as any).id)) {
           this.messages.push(data as Message)
         }
@@ -106,13 +109,13 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
-    // ── subscribe to incoming messages (call once on app mount) ──────────
-    subscribeGlobal() {
+    // ── Subscribe to incoming messages ────────────────────────────────────
+    async subscribeGlobal() {
       const supabase = useSupabaseClient()
-      const user     = useSupabaseUser()
-      if (!user.value || this._channel) return
+      if (this._channel) return
 
-      const myId = user.value.id
+      const myId = await getMyId()
+      if (!myId) return
 
       this._channel = supabase
         .channel(`inbox:${myId}`)
@@ -126,17 +129,12 @@ export const useChatStore = defineStore('chat', {
           },
           (payload: any) => {
             const msg = payload.new as Message
-
-            // If this message is from the currently open chat, append it
             if (this.openFriend?.id === msg.sender_id) {
               if (!this.messages.find(m => m.id === msg.id)) {
                 this.messages.push(msg)
               }
-              // mark read if not minimized
               if (!this.minimized) return
             }
-
-            // Otherwise increment unread count
             this.unread[msg.sender_id] = (this.unread[msg.sender_id] ?? 0) + 1
           }
         )
