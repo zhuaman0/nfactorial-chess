@@ -10,6 +10,7 @@ export const useChessStore = defineStore('chess', {
     moveHistory: [] as string[],
     isAIThinking: false,
     difficulty: 'medium' as Difficulty,
+    castleHp: 100,
   }),
 
   getters: {
@@ -81,11 +82,16 @@ export const useChessStore = defineStore('chess', {
       this.selectedSquare = null
     },
 
+    damageHp(amount: number) {
+      this.castleHp = Math.max(0, this.castleHp - amount)
+    },
+
     resetGame() {
       this.fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
       this.moveHistory = []
       this.selectedSquare = null
       this.isAIThinking = false
+      this.castleHp = 100
     },
 
     setDifficulty(d: Difficulty) {

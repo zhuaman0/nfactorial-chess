@@ -199,7 +199,30 @@
                 <div v-else-if="chessStore.turn === 'b' && !chessStore.isGameOver" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
               </div>
 
-              <ChessBoard :disabled="chessStore.turn === 'b' || chessStore.isAIThinking || chessStore.isGameOver || !sfReady" />
+              <!-- Castle HP Bar -->
+              <div class="bg-slate-800/60 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
+                <span class="text-xl select-none flex-shrink-0">🏰</span>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Castle HP</span>
+                    <span class="text-xs font-black tabular-nums" :class="hpTextColor">
+                      {{ chessStore.castleHp }} / 100
+                    </span>
+                  </div>
+                  <div class="w-full h-2.5 bg-slate-700/80 rounded-full overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all duration-700 ease-out"
+                      :class="hpBarColor"
+                      :style="{ width: `${chessStore.castleHp}%` }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <ChessBoard
+                :disabled="chessStore.turn === 'b' || chessStore.isAIThinking || chessStore.isGameOver || !sfReady"
+                @player-move="onPlayerMove"
+              />
 
               <div class="flex items-center justify-between bg-slate-800/60 border border-white/10 rounded-xl px-4 py-2.5">
                 <div class="flex items-center gap-3">
@@ -274,11 +297,75 @@ const profileStore  = useProfileStore()
 const customization = useCustomizationStore()
 const user          = useSupabaseUser()
 const historyEl     = ref<HTMLElement | null>(null)
+const advisor       = useAdvisor()
 
 const { isReady: sfReady, init: sfInit, getBestMove, destroy: sfDestroy } = useStockfish()
 
 const gameStarted  = ref(false)
 const selectedMode = ref<Difficulty>('medium')
+
+// ── Castle HP bar colours ──────────────────────────────────────────────────
+const hpBarColor = computed(() => {
+  if (chessStore.castleHp > 60) return 'bg-gradient-to-r from-emerald-500 to-green-400'
+  if (chessStore.castleHp > 30) return 'bg-gradient-to-r from-yellow-500 to-amber-400'
+  return 'bg-gradient-to-r from-red-600 to-red-400 animate-pulse'
+})
+const hpTextColor = computed(() => {
+  if (chessStore.castleHp > 60) return 'text-emerald-400'
+  if (chessStore.castleHp > 30) return 'text-amber-400'
+  return 'text-red-400'
+})
+
+// ── Material counting (proxy for blunder detection until Step 3 adds eval) ─
+// Returns white_material - black_material in pawn units.
+const PIECE_VAL: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9 }
+function materialScore(fen: string): number {
+  let score = 0
+  for (const ch of fen.split(' ')[0]) {
+    const v = PIECE_VAL[ch.toLowerCase()]
+    if (v) score += ch === ch.toUpperCase() ? v : -v
+  }
+  return score
+}
+
+// Snapshot material right after player moves, before AI replies.
+let materialSnapshot = 0
+function onPlayerMove(_payload: { fenBefore: string; fenAfter: string }) {
+  materialSnapshot = materialScore(_payload.fenAfter)
+}
+
+// After AI replies, compare material to detect captures against the player.
+watch(() => chessStore.turn, (newTurn, oldTurn) => {
+  if (!gameStarted.value || chessStore.isGameOver) return
+
+  // AI just finished its move → turn flipped back to white
+  if (newTurn === 'w' && oldTurn === 'b') {
+    const lost = materialSnapshot - materialScore(chessStore.fen)
+    if (lost >= 9) {
+      chessStore.damageHp(25)
+      advisor.show("THE QUEEN! SOUND THE ALARM! 🚨 Regroup, My Lord!", 'panic')
+    } else if (lost >= 5) {
+      chessStore.damageHp(15)
+      advisor.show("Our Rook has fallen! Hold the line! 🏰", 'panic')
+    } else if (lost >= 3) {
+      chessStore.damageHp(10)
+      advisor.show("We lost a piece, My Lord! Stay focused! 🛡️", 'panic')
+    } else if (lost >= 1) {
+      chessStore.damageHp(5)
+      advisor.show("A soldier lost! Every pawn matters! 🏰", 'neutral')
+    }
+  }
+})
+
+// React to check & checkmate events
+watch(() => chessStore.isCheck, (inCheck) => {
+  if (!inCheck || !gameStarted.value || chessStore.isCheckmate) return
+  if (chessStore.turn === 'w') {
+    advisor.show("MY LORD! You are in CHECK! Move your King to safety! 👑", 'panic', 6000)
+  } else {
+    advisor.show("Their King is in check! Finish them! ⚔️", 'praise', 3000)
+  }
+})
 
 const chessBoardBg = {
   backgroundImage: `repeating-conic-gradient(#ffffff 0% 25%, transparent 0% 50%)`,
@@ -329,12 +416,14 @@ function startGame() {
   chessStore.resetGame()
   gameStarted.value = true
   sfInit()
+  advisor.show("The battle begins! Show no mercy, My Lord! ⚔️", 'neutral', 3500)
 }
 
 function backToLobby() {
   sfDestroy()
   chessStore.resetGame()
   gameStarted.value = false
+  advisor.hide()
 }
 
 const opponentName = computed(() =>
@@ -377,7 +466,13 @@ watch(
 )
 
 watch(() => chessStore.isGameOver, async (over) => {
-  if (over) await chessStore.saveGame()
+  if (!over) return
+  if (chessStore.isCheckmate && chessStore.turn === 'b') {
+    advisor.show("CHECKMATE! You conquered the realm! ALL HAIL THE CHAMPION! 🏆", 'praise', 0)
+  } else if (chessStore.isCheckmate && chessStore.turn === 'w') {
+    advisor.show("The castle has fallen… But every knight learns from defeat! 💙", 'panic', 0)
+  }
+  await chessStore.saveGame()
 })
 
 const gameOverEmoji = computed(() => {

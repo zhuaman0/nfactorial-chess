@@ -6,23 +6,32 @@
     </div>
     <ChatPanel />
     <LayoutFooter />
+    <KingsAdvisor />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useChatStore } from '~/stores/chat'
+import { useProfileStore } from '~/stores/profile'
 
-const chatStore = useChatStore()
-const user      = useSupabaseUser()
+const chatStore    = useChatStore()
+const profileStore = useProfileStore()
+const user         = useSupabaseUser()
 
-// Start global realtime subscription for incoming messages
-onMounted(() => {
-  if (user.value) chatStore.subscribeGlobal()
+onMounted(async () => {
+  if (user.value) {
+    chatStore.subscribeGlobal()
+    await profileStore.fetchProfile()
+  }
 })
 
-watch(user, (u) => {
-  if (u) chatStore.subscribeGlobal()
-  else   chatStore.unsubscribeGlobal()
+watch(user, async (u) => {
+  if (u) {
+    chatStore.subscribeGlobal()
+    await profileStore.fetchProfile()
+  } else {
+    chatStore.unsubscribeGlobal()
+  }
 })
 
 onUnmounted(() => chatStore.unsubscribeGlobal())

@@ -27,15 +27,36 @@
       
       <LanguageSelector />
 
+      <!-- Buy button: only for logged-in free users -->
+      <NuxtLink
+        v-if="isMounted && user && !profileStore.isPro"
+        to="/upgrade"
+        class="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 px-3 py-1.5 text-xs font-bold text-black shadow-md shadow-yellow-900/30 hover:from-yellow-400 hover:to-amber-500 transition-all"
+      >
+        👑 Royal Pass
+      </NuxtLink>
 
       <template v-if="user">
         <NuxtLink to="/profile" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <UiAvatar 
-            :src="profileStore.avatarUrl" 
-            :fallback="profileStore.initials" 
-            size="sm" 
-          />
-          <span class="text-slate-300 text-sm hidden sm:inline">
+          <!-- Avatar with gold ring + crown for Pro users -->
+          <div class="relative flex-shrink-0">
+            <UiAvatar
+              :src="profileStore.avatarUrl"
+              :fallback="profileStore.initials"
+              size="sm"
+              :class="isMounted && profileStore.isPro ? 'ring-2 ring-yellow-400 shadow-[0_0_10px_rgba(251,191,36,0.6)] rounded-full' : ''"
+            />
+            <span v-if="isMounted && profileStore.isPro" class="absolute -top-2 -right-1.5 text-xs leading-none">👑</span>
+          </div>
+
+          <!-- Name: gold + "Royal Pass" label for Pro, plain for free -->
+          <span v-if="isMounted && profileStore.isPro" class="hidden sm:flex flex-col leading-tight">
+            <span class="text-sm font-bold bg-gradient-to-r from-yellow-400 to-amber-300 bg-clip-text text-transparent">
+              {{ profileStore.fullName || user?.email }}
+            </span>
+            <span class="text-[10px] font-bold tracking-widest uppercase text-yellow-500/80">Royal Pass</span>
+          </span>
+          <span v-else class="text-slate-300 text-sm hidden sm:inline">
             {{ profileStore.fullName || user?.email }}
           </span>
         </NuxtLink>
@@ -58,6 +79,9 @@ const authStore = useAuthStore()
 const profileStore = useProfileStore()
 const user = useSupabaseUser()
 const route = useRoute()
+const isMounted = ref(false)
+
+onMounted(() => { isMounted.value = true })
 
 const handleLogout = async () => {
   await authStore.logout()
