@@ -197,7 +197,7 @@
 <script setup lang="ts">
 import { useQuestsStore } from '~/stores/quests'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ name: 'Quests', middleware: 'auth' })
 
 const questsStore = useQuestsStore()
 onMounted(() => questsStore.fetchQuests())

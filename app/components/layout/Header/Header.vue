@@ -10,13 +10,20 @@
       <LayoutHeaderNav />
 
       <div class="flex items-center gap-2">
+        <LanguageSelector />
+        
         <LayoutHeaderAuth v-if="!user" />
-        <LayoutHeaderUserDropdown v-else />
+        <template v-else>
+          <LayoutHeaderNotificationBell />
+          <LayoutHeaderUserDropdown />
+        </template>
       </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
+import LanguageSelector from '~/components/common/LanguageSelector/LanguageSelector.vue'
+
 const user = useSupabaseUser()
 </script>

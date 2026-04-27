@@ -1,6 +1,6 @@
 <template>
   <div class="p-4 pb-16">
-    <main class="max-w-7xl mx-auto mt-6 flex flex-col gap-6">
+    <main class="max-w-7xl mx-auto mt-6 flex flex-col gap-8">
 
       <!-- ── Banner ──────────────────────────────────────────────────────── -->
       <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 shadow-2xl p-10">
@@ -9,142 +9,101 @@
         <div class="absolute -bottom-10 -left-10 w-72 h-72 bg-orange-800/30 rounded-full blur-3xl pointer-events-none"></div>
         <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
-            <h1 class="text-4xl font-extrabold text-white drop-shadow-lg">Friends</h1>
-            <p class="text-orange-100/80 mt-1">Manage your connections and find new players</p>
+            <h1 class="text-4xl font-extrabold text-white drop-shadow-lg">Players</h1>
+            <p class="text-orange-100/80 mt-1">Discover top players and grow your network</p>
           </div>
           <div class="flex gap-4">
             <div class="bg-white/15 border border-white/20 backdrop-blur rounded-2xl px-5 py-3 text-center min-w-[80px]">
               <p class="text-white text-2xl font-black">{{ friendsStore.friends.length }}</p>
-              <p class="text-orange-100 text-xs mt-0.5">Friends</p>
+              <p class="text-orange-100 text-xs mt-0.5">Contacts</p>
             </div>
             <div class="bg-white/15 border border-white/20 backdrop-blur rounded-2xl px-5 py-3 text-center min-w-[80px]">
-              <p class="text-white text-2xl font-black">{{ friendsStore.pendingInCount }}</p>
-              <p class="text-orange-100 text-xs mt-0.5">Requests</p>
+              <p class="text-white text-2xl font-black">{{ friendsStore.searchResults.length }}</p>
+              <p class="text-orange-100 text-xs mt-0.5">Players</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ── Tabs ───────────────────────────────────────────────────────── -->
-      <div class="flex gap-1 bg-slate-800/80 border border-white/8 rounded-2xl p-1.5">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          class="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 relative"
-          :class="activeTab === tab.key
-            ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg'
-            : 'text-slate-400 hover:text-white hover:bg-white/5'"
-          @click="activeTab = tab.key"
-        >
-          {{ tab.label }}
-          <span
-            v-if="tab.key === 'requests' && friendsStore.pendingInCount"
-            class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-orange-500 text-[10px] flex items-center justify-center font-black shadow"
-          >{{ friendsStore.pendingInCount }}</span>
-        </button>
-      </div>
-
-      <!-- ══ MY FRIENDS ══════════════════════════════════════════════════ -->
-      <div v-if="activeTab === 'friends'">
-        <div v-if="friendsStore.loading" class="flex justify-center py-20">
-          <div class="w-8 h-8 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
+      <!-- ── Top Players ─────────────────────────────────────────────────── -->
+      <div>
+        <div class="flex items-center gap-3 mb-5">
+          <span class="text-2xl">🏆</span>
+          <h2 class="text-xl font-extrabold text-slate-800">Top Players</h2>
+          <span class="px-2.5 py-0.5 bg-orange-500/20 border border-orange-500/40 text-orange-400 text-xs font-bold rounded-full">
+            Top {{ Math.min(5, leaderboardStore.entries.length) }}
+          </span>
         </div>
 
-        <div v-else-if="friendsStore.friends.length === 0" class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-orange-500/20 rounded-3xl p-16 shadow-2xl text-center">
-          <div class="absolute -top-10 -right-10 w-56 h-56 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
-          <p class="text-6xl mb-4">👥</p>
-          <p class="text-white text-xl font-bold mb-2">No friends yet</p>
-          <p class="text-slate-400 text-sm mb-6">Head to Find Players to connect with others!</p>
-          <button
-            class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-opacity"
-            @click="activeTab = 'search'"
+        <div v-if="leaderboardStore.loading" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div v-for="i in 5" :key="i" class="h-44 bg-white/5 border border-white/8 rounded-2xl animate-pulse"></div>
+        </div>
+
+        <div v-else-if="topPlayers.length === 0" class="text-center py-8 text-slate-500 text-sm">
+          No leaderboard data yet.
+        </div>
+
+        <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div
+            v-for="(player, i) in topPlayers"
+            :key="player.id"
+            :class="[
+              'relative overflow-hidden rounded-2xl p-5 flex flex-col items-center text-center gap-3 border shadow-lg transition-all duration-200 hover:-translate-y-1',
+              i === 0 ? 'bg-gradient-to-b from-amber-900/60 to-slate-900 border-amber-500/50' :
+              i === 1 ? 'bg-gradient-to-b from-slate-600/60 to-slate-900 border-slate-400/40' :
+              i === 2 ? 'bg-gradient-to-b from-orange-900/50 to-slate-900 border-orange-700/50' :
+                        'bg-gradient-to-b from-slate-800 to-slate-900 border-white/8'
+            ]"
           >
-            Find Players →
-          </button>
-        </div>
-
-        <!-- Friends grid -->
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          <FriendsUserCard
-            v-for="f in friendsStore.friends"
-            :key="f.id"
-            :user="f.friend"
-            :friendship="f"
-            @message="openChat"
-            @remove="friendsStore.removeFriend($event)"
-          />
-        </div>
-      </div>
-
-      <!-- ══ REQUESTS ════════════════════════════════════════════════════ -->
-      <div v-else-if="activeTab === 'requests'">
-        <div
-          v-if="friendsStore.pendingIn.length === 0 && friendsStore.pendingOut.length === 0"
-          class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-orange-500/20 rounded-3xl p-16 shadow-2xl text-center"
-        >
-          <div class="absolute -bottom-10 -left-10 w-56 h-56 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
-          <p class="text-6xl mb-4">📭</p>
-          <p class="text-white text-xl font-bold mb-2">No pending requests</p>
-          <p class="text-slate-400 text-sm">Requests you send or receive will appear here.</p>
-        </div>
-
-        <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Incoming -->
-          <div v-if="friendsStore.pendingIn.length" class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-orange-500/30 rounded-3xl p-6 shadow-2xl">
-            <div class="absolute -top-8 -right-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="relative">
-              <div class="flex items-center gap-2 mb-4">
-                <span class="text-lg">📥</span>
-                <p class="text-white font-extrabold">Incoming</p>
-                <span class="px-2 py-0.5 bg-orange-500/20 border border-orange-500/40 text-orange-400 text-xs font-bold rounded-full">
-                  {{ friendsStore.pendingIn.length }}
-                </span>
-              </div>
-              <div class="flex flex-col gap-2">
-                <FriendsUserCard
-                  v-for="f in friendsStore.pendingIn"
-                  :key="f.id"
-                  :user="f.friend"
-                  :friendship="f"
-                  subtitle="Wants to be your friend"
-                  @accept="friendsStore.acceptRequest($event)"
-                  @decline="friendsStore.declineRequest($event)"
-                />
-              </div>
+            <!-- Rank badge -->
+            <div
+              :class="[
+                'absolute top-3 left-3 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black',
+                i === 0 ? 'bg-amber-400 text-amber-900' :
+                i === 1 ? 'bg-slate-300 text-slate-700' :
+                i === 2 ? 'bg-orange-600 text-white' :
+                          'bg-slate-700 text-slate-400'
+              ]"
+            >
+              {{ i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}` }}
             </div>
-          </div>
 
-          <!-- Outgoing -->
-          <div v-if="friendsStore.pendingOut.length" class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-white/10 rounded-3xl p-6 shadow-2xl">
-            <div class="absolute -bottom-8 -left-8 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="relative">
-              <div class="flex items-center gap-2 mb-4">
-                <span class="text-lg">📤</span>
-                <p class="text-white font-extrabold">Sent</p>
-                <span class="px-2 py-0.5 bg-slate-700 border border-white/10 text-slate-400 text-xs font-bold rounded-full">
-                  {{ friendsStore.pendingOut.length }}
-                </span>
-              </div>
-              <div class="flex flex-col gap-2">
-                <FriendsUserCard
-                  v-for="f in friendsStore.pendingOut"
-                  :key="f.id"
-                  :user="f.friend"
-                  :friendship="f"
-                  subtitle="Request sent · waiting for reply"
-                  @cancel="friendsStore.declineRequest($event)"
-                />
-              </div>
+            <UiAvatar :src="player.avatar_url" :fallback="player.initials" size="lg" />
+            <div class="w-full">
+              <p class="text-white font-bold text-sm truncate leading-tight">{{ player.fullName }}</p>
+              <p class="text-slate-400 text-xs mt-0.5">{{ player.wins }} wins</p>
             </div>
+
+            <!-- Contact button -->
+            <button
+              v-if="!player.friendship"
+              class="w-full py-1.5 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400 hover:bg-orange-500/30 text-xs font-bold transition-all"
+              @click="friendsStore.sendRequest(player.id)"
+            >+ Add</button>
+            <button
+              v-else-if="player.friendship.status === 'pending' && player.friendship.isSentByMe"
+              class="w-full py-1.5 rounded-xl bg-slate-700/60 border border-white/8 text-slate-400 text-xs font-medium"
+              disabled
+            >Pending…</button>
+            <span
+              v-else-if="player.friendship.status === 'accepted'"
+              class="text-xs text-emerald-400 font-semibold flex items-center gap-1"
+            >
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Contact
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- ══ FIND PLAYERS ════════════════════════════════════════════════ -->
-      <div v-else-if="activeTab === 'search'" class="flex flex-col gap-5">
+      <!-- ── All Players ──────────────────────────────────────────────────── -->
+      <div>
+        <div class="flex items-center gap-3 mb-5">
+          <span class="text-2xl">👥</span>
+          <h2 class="text-xl font-extrabold text-white">All Players</h2>
+        </div>
 
-        <!-- Search bar -->
-        <div class="relative">
+        <!-- Search -->
+        <div class="relative mb-5">
           <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -164,13 +123,7 @@
           </div>
         </div>
 
-        <!-- Count label -->
-        <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider px-1">
-          {{ searchQuery ? `Results for "${searchQuery}"` : 'All Players' }}
-          <span class="text-slate-600">({{ friendsStore.searchResults.length }})</span>
-        </p>
-
-        <!-- Loading skeletons -->
+        <!-- Skeletons -->
         <div v-if="friendsStore.searching" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           <div v-for="i in 6" :key="i" class="h-20 bg-white/5 border border-white/8 rounded-2xl animate-pulse"></div>
         </div>
@@ -182,7 +135,7 @@
           <p v-if="searchQuery" class="text-slate-400 text-sm mt-1">Try a different name.</p>
         </div>
 
-        <!-- Players grid -->
+        <!-- Grid -->
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           <FriendsUserCard
             v-for="u in friendsStore.searchResults"
@@ -204,47 +157,48 @@
 </template>
 
 <script setup lang="ts">
-import { useFriendsStore } from '~/stores/friends'
-import { useChatStore }    from '~/stores/chat'
-import type { FriendProfile } from '~/stores/friends'
+import { useFriendsStore }     from '~/stores/friends'
+import { useChatStore }        from '~/stores/chat'
+import { useLeaderboardStore } from '~/stores/leaderboard'
+import type { FriendProfile }  from '~/stores/friends'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ name: 'Friends', middleware: 'auth' })
 
-const friendsStore = useFriendsStore()
-const chatStore    = useChatStore()
+const friendsStore     = useFriendsStore()
+const chatStore        = useChatStore()
+const leaderboardStore = useLeaderboardStore()
 
-const activeTab   = ref<'friends' | 'requests' | 'search'>('friends')
 const searchQuery = ref('')
-
-const tabs = [
-  { key: 'friends',  label: 'My Friends'   },
-  { key: 'requests', label: 'Requests'     },
-  { key: 'search',   label: 'Find Players' },
-] as const
 
 const chessBoardBg = {
   backgroundImage: `repeating-conic-gradient(#ffffff 0% 25%, transparent 0% 50%)`,
   backgroundSize: '40px 40px',
 }
 
-watch(activeTab, async (tab) => {
-  if (tab === 'search') {
-    await friendsStore.fetchAll()
-    await friendsStore.loadUsers(searchQuery.value)
-  }
-})
+const topPlayers = computed(() =>
+  leaderboardStore.entries.slice(0, 5).map(entry => ({
+    ...entry,
+    fullName:   `${entry.first_name} ${entry.last_name}`.trim() || entry.id.slice(0, 8),
+    initials:   ((entry.first_name[0] || '') + (entry.last_name[0] || '')).toUpperCase() || '?',
+    friendship: friendsStore.allFriendships.find(f => f.friend.id === entry.id) ?? null,
+  }))
+)
 
 let searchTimer: ReturnType<typeof setTimeout>
 watch(searchQuery, (q) => {
   clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    if (activeTab.value === 'search') friendsStore.loadUsers(q)
-  }, 300)
+  searchTimer = setTimeout(() => friendsStore.loadUsers(q), 300)
 })
 
 const openChat = async (friend: FriendProfile) => {
   await chatStore.openWith(friend)
 }
 
-onMounted(() => friendsStore.fetchAll())
+onMounted(async () => {
+  await Promise.all([
+    friendsStore.fetchAll(),
+    leaderboardStore.fetchLeaderboard(),
+  ])
+  await friendsStore.loadUsers('')
+})
 </script>

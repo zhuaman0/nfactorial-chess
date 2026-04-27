@@ -247,7 +247,7 @@ import { useProfileStore } from '~/stores/profile'
 import { useQuestsStore }  from '~/stores/quests'
 import { useFriendsStore } from '~/stores/friends'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ name: 'Profile', middleware: 'auth' })
 
 const profileStore = useProfileStore()
 const questsStore  = useQuestsStore()

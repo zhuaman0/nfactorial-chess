@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ name: 'Confirm', layout: false })
 
 const user = useSupabaseUser()
 const profileStore = useProfileStore()

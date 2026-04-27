@@ -14,10 +14,24 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: [
+    '@nuxtjs/i18n',
     '@nuxtjs/supabase',
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
   ],
+  i18n: {
+    locales: [
+      { code: 'en', file: 'en.json' },
+      { code: 'ru', file: 'ru.json' },
+      { code: 'kz', file: 'kz.json' }
+    ],
+    defaultLocale: 'en',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_redirected',
+      redirectOn: 'root',
+    }
+  },
   supabase: {
     redirect: true,
     redirectOptions: {
@@ -39,5 +53,16 @@ export default defineNuxtConfig({
         configureServer: copyStockfish,
       },
     ],
+  },
+  app: {
+    head: {
+      link: [
+        {
+          rel: 'icon',
+          type: 'image/png',
+          href: '/LKog.png',
+        },
+      ],
+    },
   },
 })

@@ -245,6 +245,7 @@
 import { useLeaderboardStore } from '~/stores/leaderboard'
 
 definePageMeta({
+  name: 'Leaderboard',
   middleware: 'auth'
 })
 

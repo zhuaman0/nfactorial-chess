@@ -1,102 +1,160 @@
 <template>
   <div class="p-4 pb-16 mt-6">
     <main class="max-w-6xl mx-auto">
-
-      <!-- ══════════════════════════════════════════════════ LOBBY ══ -->
       <Transition name="page-fade" mode="out-in">
-        <div v-if="!gameStarted" key="lobby" class="max-w-2xl mx-auto">
 
-          <!-- Header -->
-          <div class="text-center mb-8">
-            <div class="text-5xl mb-3">♟</div>
-            <h1 class="text-3xl font-bold text-white">Play Chess</h1>
-            <p class="text-slate-400 mt-1 text-sm">Set up your game before starting</p>
-          </div>
+        <!-- ══════════════════════════════════════════ LOBBY ══ -->
+        <div v-if="!gameStarted" key="lobby" class="flex flex-col gap-6">
 
-          <!-- Choose Opponent -->
-          <div class="bg-slate-800/60 border border-white/10 rounded-2xl p-5 mb-4">
-            <p class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">Choose Opponent</p>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button
-                v-for="m in MODES"
-                :key="m.value"
-                class="flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-150"
-                :class="selectedMode === m.value
-                  ? `${m.activeClass} border-transparent`
-                  : 'border-white/10 hover:border-white/20 text-slate-400 hover:text-white bg-slate-900/40'"
-                @click="selectedMode = m.value"
-              >
-                <span class="text-2xl">{{ m.icon }}</span>
-                <div class="text-center">
-                  <p class="text-sm font-semibold leading-tight">{{ m.label }}</p>
-                  <p class="text-xs opacity-70 mt-0.5 leading-tight">{{ m.desc }}</p>
-                </div>
-              </button>
+          <!-- Banner -->
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 shadow-2xl">
+            <div class="absolute inset-0 opacity-10 pointer-events-none" :style="chessBoardBg"></div>
+            <div class="absolute -top-10 -right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative flex items-center justify-between px-10 py-8">
+              <div>
+                <h1 class="text-4xl font-extrabold text-white drop-shadow-lg">Play Chess</h1>
+                <p class="text-orange-100/80 mt-1">Set up your match and enter the arena</p>
+              </div>
+              <span class="text-7xl drop-shadow-2xl select-none hidden sm:block">♟</span>
             </div>
           </div>
 
-          <!-- Piece Style -->
-          <div class="bg-slate-800/60 border border-white/10 rounded-2xl p-5 mb-4">
-            <p class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">Piece Style</p>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button
-                v-for="s in SKINS"
-                :key="s.value"
-                class="flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-150"
-                :class="customization.skin === s.value
-                  ? 'bg-white/10 border-white/30 text-white'
-                  : 'border-white/10 hover:border-white/20 text-slate-400 hover:text-white bg-slate-900/40'"
-                @click="customization.setSkin(s.value)"
-              >
-                <!-- Piece preview with skin filter -->
-                <span class="text-3xl leading-none" :class="s.filterClass">♛</span>
-                <div class="text-center">
-                  <p class="text-sm font-semibold leading-tight">{{ s.label }}</p>
-                  <p class="text-xs opacity-60 mt-0.5">{{ s.desc }}</p>
-                </div>
-              </button>
-            </div>
-          </div>
+          <!-- Main grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          <!-- Arena Theme -->
-          <div class="bg-slate-800/60 border border-white/10 rounded-2xl p-5 mb-6">
-            <p class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">Arena</p>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="(t, key) in ARENA_THEMES"
-                :key="key"
-                class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all duration-150"
-                :class="customization.theme === key
-                  ? 'border-white/40 bg-white/10 text-white'
-                  : 'border-white/10 hover:border-white/20 text-slate-400 hover:text-white bg-slate-900/40'"
-                @click="customization.setTheme(key as any)"
-              >
-                <!-- Two-square swatch -->
-                <div class="flex rounded overflow-hidden shrink-0 ring-1 ring-white/20">
-                  <div class="w-4 h-4" :style="{ backgroundColor: t.light }"></div>
-                  <div class="w-4 h-4" :style="{ backgroundColor: t.dark }"></div>
+            <!-- ── Left 2 cols ── -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+
+              <!-- Choose Opponent -->
+              <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-orange-500/30 rounded-3xl p-7 shadow-2xl">
+                <div class="absolute -top-8 -right-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative">
+                  <div class="flex items-center gap-2 mb-5">
+                    <span class="text-xl">🎯</span>
+                    <h2 class="text-lg font-extrabold text-white">Choose Opponent</h2>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <button
+                      v-for="m in MODES"
+                      :key="m.value"
+                      class="relative flex flex-col items-start gap-3 p-5 rounded-2xl border transition-all duration-200 text-left group hover:-translate-y-0.5"
+                      :class="selectedMode === m.value
+                        ? `${m.activeBg} ${m.activeBorder} shadow-lg`
+                        : 'bg-slate-800/60 border-white/8 hover:border-white/20'"
+                      @click="selectedMode = m.value"
+                    >
+                      <!-- Selected checkmark -->
+                      <div
+                        v-if="selectedMode === m.value"
+                        class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                        :class="m.checkBg"
+                      >✓</div>
+
+                      <span class="text-3xl leading-none">{{ m.icon }}</span>
+                      <div>
+                        <p class="font-bold text-sm leading-tight" :class="selectedMode === m.value ? m.activeText : 'text-white'">{{ m.label }}</p>
+                        <p class="text-xs mt-0.5 text-slate-500 leading-tight">{{ m.desc }}</p>
+                      </div>
+                      <!-- Difficulty dots -->
+                      <div class="flex gap-1 mt-1">
+                        <span
+                          v-for="d in 4"
+                          :key="d"
+                          class="w-1.5 h-1.5 rounded-full"
+                          :class="d <= m.dots
+                            ? (selectedMode === m.value ? m.dotActive : 'bg-slate-400')
+                            : 'bg-slate-700'"
+                        ></span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-                <span class="text-sm font-medium">{{ t.name }}</span>
-                <svg v-if="customization.theme === key" class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <path d="M20 6L9 17l-5-5" />
+              </div>
+
+              <!-- Piece Style -->
+              <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-orange-500/30 rounded-3xl p-7 shadow-2xl">
+                <div class="absolute -bottom-8 -left-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative">
+                  <div class="flex items-center gap-2 mb-5">
+                    <span class="text-xl">♛</span>
+                    <h2 class="text-lg font-extrabold text-white">Piece Style</h2>
+                  </div>
+                  <div class="grid grid-cols-4 gap-3">
+                    <button
+                      v-for="s in SKINS"
+                      :key="s.value"
+                      class="flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
+                      :class="customization.skin === s.value
+                        ? 'bg-orange-500/15 border-orange-500/40 shadow-lg shadow-orange-500/10'
+                        : 'bg-slate-800/60 border-white/8 hover:border-white/20'"
+                      @click="customization.setSkin(s.value)"
+                    >
+                      <span class="text-4xl leading-none" :class="s.filterClass">♛</span>
+                      <div class="text-center">
+                        <p class="font-bold text-xs leading-tight" :class="customization.skin === s.value ? 'text-orange-300' : 'text-white'">{{ s.label }}</p>
+                        <p class="text-[10px] text-slate-600 mt-0.5">{{ s.desc }}</p>
+                      </div>
+                      <div v-if="customization.skin === s.value" class="w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center text-white text-[9px] font-black">✓</div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ── Right col: Arena + Start ── -->
+            <div class="flex flex-col gap-6">
+
+              <!-- Arena Theme -->
+              <div class="relative overflow-hidden bg-white border border-orange-500/20 rounded-3xl p-7 shadow-2xl flex-1">
+                <div class="absolute -top-8 -right-8 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative">
+                  <div class="flex items-center gap-2 mb-5">
+                    <span class="text-xl">🏟</span>
+                    <h2 class="text-lg font-extrabold text-slate-900">Arena</h2>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button
+                      v-for="(t, key) in ARENA_THEMES"
+                      :key="key"
+                      class="flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-150 w-full text-left"
+                      :class="customization.theme === key
+                        ? 'border-orange-500/40 bg-orange-50 shadow-sm'
+                        : 'border-slate-200 hover:border-orange-500/20 hover:bg-slate-50'"
+                      @click="customization.setTheme(key as any)"
+                    >
+                      <!-- 2×2 swatch -->
+                      <div class="grid grid-cols-2 rounded-lg overflow-hidden shrink-0 ring-1 ring-black/10 shadow-sm">
+                        <div class="w-5 h-5" :style="{ backgroundColor: t.light }"></div>
+                        <div class="w-5 h-5" :style="{ backgroundColor: t.dark }"></div>
+                        <div class="w-5 h-5" :style="{ backgroundColor: t.dark }"></div>
+                        <div class="w-5 h-5" :style="{ backgroundColor: t.light }"></div>
+                      </div>
+                      <span class="text-sm font-semibold flex-1" :class="customization.theme === key ? 'text-orange-600' : 'text-slate-700'">{{ t.name }}</span>
+                      <div v-if="customization.theme === key" class="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white text-[10px] font-black shrink-0">✓</div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Start button -->
+              <button
+                class="w-full py-5 rounded-2xl font-extrabold text-lg text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-90 active:scale-[0.98] transition-all shadow-xl shadow-orange-500/30 flex items-center justify-center gap-3"
+                @click="startGame"
+              >
+                <span class="text-2xl">⚔️</span>
+                Start Game
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </button>
+
             </div>
           </div>
-
-          <!-- Start Game Button -->
-          <button
-            class="w-full py-4 rounded-2xl font-bold text-lg transition-all duration-150 active:scale-[0.98]"
-            :class="startBtnClass"
-            @click="startGame"
-          >
-            Start Game →
-          </button>
         </div>
 
-        <!-- ══════════════════════════════════════════════════ GAME ══ -->
+        <!-- ══════════════════════════════════════════ GAME ══ -->
         <div v-else key="game">
-          <!-- Back to Setup -->
           <div class="flex items-center justify-between mb-4">
             <button
               class="flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors"
@@ -108,24 +166,19 @@
               Back to Setup
             </button>
             <div class="flex items-center gap-2">
-              <!-- Mode badge -->
               <span
                 class="text-xs font-semibold px-2.5 py-1 rounded-full border"
                 :class="MODES.find(m => m.value === selectedMode)?.badgeClass"
               >
                 {{ MODES.find(m => m.value === selectedMode)?.label }}
               </span>
-              <!-- Skin badge -->
               <span class="text-xs text-slate-500">{{ SKINS.find(s => s.value === customization.skin)?.label }} skin</span>
             </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
-
-            <!-- ── Left: Board ──────────────────────────────────── -->
+            <!-- ── Left: Board ── -->
             <div class="flex flex-col gap-3">
-
-              <!-- Opponent Card -->
               <div class="flex items-center justify-between bg-slate-800/60 border border-white/10 rounded-xl px-4 py-2.5">
                 <div class="flex items-center gap-3">
                   <div
@@ -146,10 +199,8 @@
                 <div v-else-if="chessStore.turn === 'b' && !chessStore.isGameOver" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
               </div>
 
-              <!-- Chess Board -->
               <ChessBoard :disabled="chessStore.turn === 'b' || chessStore.isAIThinking || chessStore.isGameOver || !sfReady" />
 
-              <!-- Player Card -->
               <div class="flex items-center justify-between bg-slate-800/60 border border-white/10 rounded-xl px-4 py-2.5">
                 <div class="flex items-center gap-3">
                   <UiAvatar :src="avatarSrc" :fallback="profileStore.initials || '?'" size="sm" />
@@ -162,10 +213,8 @@
               </div>
             </div>
 
-            <!-- ── Right: Sidebar ───────────────────────────────── -->
+            <!-- ── Right: Sidebar ── -->
             <div class="flex flex-col gap-4">
-
-              <!-- Move History -->
               <div class="bg-slate-800/60 border border-white/10 rounded-2xl p-4 flex flex-col min-h-[280px] max-h-[380px]">
                 <p class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">Move History</p>
                 <div ref="historyEl" class="flex-1 overflow-y-auto space-y-0.5 font-mono text-sm pr-1">
@@ -184,13 +233,11 @@
                 </div>
               </div>
 
-              <!-- Stockfish Loading -->
               <div v-if="!sfReady" class="bg-slate-800/60 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
                 <div class="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin shrink-0"></div>
                 <p class="text-slate-400 text-sm">Loading chess engine…</p>
               </div>
 
-              <!-- Game Over Card -->
               <Transition name="slide-up">
                 <div
                   v-if="chessStore.isGameOver"
@@ -200,18 +247,15 @@
                   <h3 class="text-white font-bold text-lg mb-1">{{ gameOverTitle }}</h3>
                   <p class="text-slate-400 text-sm mb-4">{{ gameOverDescription }}</p>
                   <div class="flex gap-2">
-                    <UiButton variant="primary" size="sm" @click="chessStore.resetGame()">
-                      Play Again
-                    </UiButton>
-                    <UiButton variant="ghost" size="sm" @click="backToLobby">
-                      Change Setup
-                    </UiButton>
+                    <UiButton variant="primary" size="sm" @click="chessStore.resetGame()">Play Again</UiButton>
+                    <UiButton variant="outline" size="sm" @click="backToLobby">Change Setup</UiButton>
                   </div>
                 </div>
               </Transition>
             </div>
           </div>
         </div>
+
       </Transition>
     </main>
   </div>
@@ -223,49 +267,61 @@ import { useProfileStore } from '~/stores/profile'
 import { useCustomizationStore, ARENA_THEMES } from '~/stores/customization'
 import ChessBoard from '~/components/chess/ChessBoard.vue'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ name: 'Play', middleware: 'auth' })
 
-const chessStore     = useChessStore()
-const profileStore   = useProfileStore()
-const customization  = useCustomizationStore()
-const user           = useSupabaseUser()
-const historyEl      = ref<HTMLElement | null>(null)
+const chessStore    = useChessStore()
+const profileStore  = useProfileStore()
+const customization = useCustomizationStore()
+const user          = useSupabaseUser()
+const historyEl     = ref<HTMLElement | null>(null)
 
 const { isReady: sfReady, init: sfInit, getBestMove, destroy: sfDestroy } = useStockfish()
 
-// ── State ─────────────────────────────────────────────────────────────────
 const gameStarted  = ref(false)
 const selectedMode = ref<Difficulty>('medium')
 
-// ── Mode / skin config ────────────────────────────────────────────────────
+const chessBoardBg = {
+  backgroundImage: `repeating-conic-gradient(#ffffff 0% 25%, transparent 0% 50%)`,
+  backgroundSize: '40px 40px',
+}
+
 const MODES = [
-  { value: 'easy'   as Difficulty, label: 'Easy Bot',    icon: '🤖', desc: 'Beginner friendly',  activeClass: 'bg-emerald-500/20 text-emerald-300', badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-  { value: 'medium' as Difficulty, label: 'Medium Bot',  icon: '🤖', desc: 'Decent challenge',   activeClass: 'bg-blue-500/20    text-blue-300',    badgeClass: 'bg-blue-500/20    text-blue-300    border-blue-500/30'    },
-  { value: 'hard'   as Difficulty, label: 'Hard Bot',    icon: '🤖', desc: 'Will fight hard',    activeClass: 'bg-orange-500/20  text-orange-300',  badgeClass: 'bg-orange-500/20  text-orange-300  border-orange-500/30'  },
-  { value: 'ai'     as Difficulty, label: 'Max AI',      icon: '🧠', desc: 'Nearly unbeatable',  activeClass: 'bg-purple-500/20  text-purple-300',  badgeClass: 'bg-purple-500/20  text-purple-300  border-purple-500/30'  },
+  {
+    value: 'easy'   as Difficulty, label: 'Easy Bot',   icon: '🤖', desc: 'Beginner friendly',  dots: 1,
+    activeBg: 'bg-emerald-500/15', activeBorder: 'border-emerald-500/40', activeText: 'text-emerald-300',
+    dotActive: 'bg-emerald-400', checkBg: 'bg-emerald-500 text-white',
+    badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+  },
+  {
+    value: 'medium' as Difficulty, label: 'Medium Bot', icon: '🤖', desc: 'Decent challenge',   dots: 2,
+    activeBg: 'bg-blue-500/15',    activeBorder: 'border-blue-500/40',    activeText: 'text-blue-300',
+    dotActive: 'bg-blue-400',    checkBg: 'bg-blue-500 text-white',
+    badgeClass: 'bg-blue-500/20    text-blue-300    border-blue-500/30',
+  },
+  {
+    value: 'hard'   as Difficulty, label: 'Hard Bot',   icon: '🤖', desc: 'Will fight back',    dots: 3,
+    activeBg: 'bg-orange-500/15',  activeBorder: 'border-orange-500/40',  activeText: 'text-orange-300',
+    dotActive: 'bg-orange-400',  checkBg: 'bg-orange-500 text-white',
+    badgeClass: 'bg-orange-500/20  text-orange-300  border-orange-500/30',
+  },
+  {
+    value: 'ai'     as Difficulty, label: 'Max AI',     icon: '🧠', desc: 'Nearly unbeatable',  dots: 4,
+    activeBg: 'bg-purple-500/15',  activeBorder: 'border-purple-500/40',  activeText: 'text-purple-300',
+    dotActive: 'bg-purple-400',  checkBg: 'bg-purple-500 text-white',
+    badgeClass: 'bg-purple-500/20  text-purple-300  border-purple-500/30',
+  },
 ]
 
 const SKINS = [
-  { value: 'classic' as const, label: 'Classic', desc: 'Traditional',    filterClass: '' },
-  { value: 'neon'    as const, label: 'Neon',    desc: 'Glowing',        filterClass: 'preview-neon-b'  },
-  { value: 'royal'   as const, label: 'Royal',   desc: 'Golden pieces',  filterClass: 'preview-royal-b' },
-  { value: 'pixel'   as const, label: 'Pixel',   desc: 'Unicode style',  filterClass: 'preview-pixel'   },
+  { value: 'classic' as const, label: 'Classic', desc: 'Traditional',   filterClass: '' },
+  { value: 'neon'    as const, label: 'Neon',    desc: 'Glowing',       filterClass: 'preview-neon-b'  },
+  { value: 'royal'   as const, label: 'Royal',   desc: 'Golden pieces', filterClass: 'preview-royal-b' },
+  { value: 'pixel'   as const, label: 'Pixel',   desc: 'Unicode style', filterClass: 'preview-pixel'   },
 ]
 
-// ── Avatar ────────────────────────────────────────────────────────────────
 const avatarSrc = computed(() => {
   const meta = user.value?.user_metadata || {}
   return profileStore.avatarUrl || meta.picture || meta.avatar_url || ''
-})
-
-// ── Start / back ──────────────────────────────────────────────────────────
-const startBtnClass = computed(() => {
-  const m = MODES.find(x => x.value === selectedMode.value)
-  const base = 'text-white shadow-lg'
-  if (selectedMode.value === 'easy')   return `${base} bg-emerald-600 hover:bg-emerald-500`
-  if (selectedMode.value === 'medium') return `${base} bg-blue-600    hover:bg-blue-500`
-  if (selectedMode.value === 'hard')   return `${base} bg-orange-600  hover:bg-orange-500`
-  return `${base} bg-purple-600 hover:bg-purple-500`
 })
 
 function startGame() {
@@ -281,7 +337,6 @@ function backToLobby() {
   gameStarted.value = false
 }
 
-// ── Opponent labels ───────────────────────────────────────────────────────
 const opponentName = computed(() =>
   selectedMode.value === 'ai' ? 'Grandmaster AI' : 'Stockfish Bot'
 )
@@ -291,7 +346,6 @@ const opponentLabel = computed(() => {
   return map[selectedMode.value] ?? selectedMode.value
 })
 
-// ── Move pairs (1. e4  e5 format) ─────────────────────────────────────────
 const movePairs = computed(() => {
   const pairs: [string, string?][] = []
   for (let i = 0; i < chessStore.moveHistory.length; i += 2) {
@@ -305,7 +359,6 @@ watch(() => chessStore.moveHistory.length, async () => {
   if (historyEl.value) historyEl.value.scrollTop = historyEl.value.scrollHeight
 })
 
-// ── AI move trigger ────────────────────────────────────────────────────────
 watch(
   () => [chessStore.turn, chessStore.isGameOver, sfReady.value, gameStarted.value] as const,
   async ([turn, gameOver, ready, started]) => {
@@ -323,12 +376,10 @@ watch(
   { immediate: true }
 )
 
-// ── Auto-save on game over ────────────────────────────────────────────────
 watch(() => chessStore.isGameOver, async (over) => {
   if (over) await chessStore.saveGame()
 })
 
-// ── Game over display ─────────────────────────────────────────────────────
 const gameOverEmoji = computed(() => {
   if (chessStore.isCheckmate) return chessStore.turn === 'w' ? '🤖' : '🏆'
   return '🤝'
@@ -346,7 +397,6 @@ const gameOverDescription = computed(() => {
   return 'The game ended in a draw.'
 })
 
-// ── Lifecycle ─────────────────────────────────────────────────────────────
 onMounted(async () => {
   customization.load()
   await profileStore.fetchProfile()
@@ -355,9 +405,7 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => {
-  sfDestroy()
-})
+onUnmounted(() => { sfDestroy() })
 </script>
 
 <style scoped>
@@ -368,7 +416,6 @@ onUnmounted(() => {
 .slide-up-enter-active { transition: all 0.3s ease; }
 .slide-up-enter-from   { opacity: 0; transform: translateY(12px); }
 
-/* Skin filter previews (used on the ♛ preview in lobby) */
 .preview-neon-b {
   filter: sepia(1) saturate(8) hue-rotate(260deg) brightness(1.3)
           drop-shadow(0 0 5px #cc44ff) drop-shadow(0 0 10px #8800cc);

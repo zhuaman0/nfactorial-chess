@@ -24,18 +24,27 @@
           Leaderboard
         </NuxtLink>
       </div>
+      
+      <LanguageSelector />
 
-      <NuxtLink to="/profile" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-        <UiAvatar 
-          :src="profileStore.avatarUrl" 
-          :fallback="profileStore.initials" 
-          size="sm" 
-        />
-        <span class="text-slate-300 text-sm hidden sm:inline">
-          {{ profileStore.fullName || user?.email }}
-        </span>
-      </NuxtLink>
-      <UiButton variant="outline" size="sm" @click="handleLogout">Sign Out</UiButton>
+
+      <template v-if="user">
+        <NuxtLink to="/profile" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <UiAvatar 
+            :src="profileStore.avatarUrl" 
+            :fallback="profileStore.initials" 
+            size="sm" 
+          />
+          <span class="text-slate-300 text-sm hidden sm:inline">
+            {{ profileStore.fullName || user?.email }}
+          </span>
+        </NuxtLink>
+        <UiButton variant="outline" size="sm" @click="handleLogout">Sign Out</UiButton>
+      </template>
+      <template v-else>
+        <AuthActionButton to="/auth/login" labelKey="log_in" />
+        <AuthActionButton to="/auth/register" labelKey="sign_up" />
+      </template>
     </div>
   </nav>
 </template>
@@ -43,6 +52,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
 import { useProfileStore } from '~/stores/profile'
+import LanguageSelector from '~/components/common/LanguageSelector/LanguageSelector.vue'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
