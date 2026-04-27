@@ -24,6 +24,9 @@
           Leaderboard
         </NuxtLink>
       </div>
+      
+      <LanguageSelector />
+
 
       <template v-if="user">
         <NuxtLink to="/profile" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -49,6 +52,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
 import { useProfileStore } from '~/stores/profile'
+import LanguageSelector from '~/components/common/LanguageSelector/LanguageSelector.vue'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
