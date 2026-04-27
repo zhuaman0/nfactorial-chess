@@ -64,8 +64,8 @@ function buildRoundRobin(playerIds: string[]): { a: string; b: string; round: nu
 
   for (let r = 0; r < rounds; r++) {
     for (let m = 0; m < matchesPerRound; m++) {
-      const home = ids[m]
-      const away = ids[n - 1 - m]
+      const home = ids[m]!
+      const away = ids[n - 1 - m]!
       if (home !== 'BYE' && away !== 'BYE') {
         fixtures.push({ a: home, b: away, round: r + 1 })
       }
@@ -193,7 +193,7 @@ export const useTournamentStore = defineStore('tournament', {
         // Auto-join as participant
         await supabase
           .from('tournament_participants')
-          .insert({ tournament_id: data.id, user_id: myId } as never)
+          .insert({ tournament_id: (data as any).id, user_id: myId } as never)
 
         this.successMsg = 'Tournament created!'
         await this.fetchMyTournaments()
@@ -225,9 +225,9 @@ export const useTournamentStore = defineStore('tournament', {
         const { count } = await supabase
           .from('tournament_participants')
           .select('*', { count: 'exact', head: true })
-          .eq('tournament_id', tournament.id)
+          .eq('tournament_id', (tournament as any).id)
 
-        if ((count ?? 0) >= tournament.max_players) {
+        if ((count ?? 0) >= (tournament as any).max_players) {
           this.error = 'This tournament is full.'
           return null
         }
@@ -235,7 +235,7 @@ export const useTournamentStore = defineStore('tournament', {
         // Join
         const { error: joinErr } = await supabase
           .from('tournament_participants')
-          .insert({ tournament_id: tournament.id, user_id: myId } as never)
+          .insert({ tournament_id: (tournament as any).id, user_id: myId } as never)
 
         if (joinErr) {
           if (joinErr.code === '23505') { this.error = 'You are already in this tournament.' }
@@ -243,7 +243,8 @@ export const useTournamentStore = defineStore('tournament', {
           return null
         }
 
-        this.successMsg = `Joined "${tournament.name}"!`
+        this.successMsg = `Joined "${(tournament as any).name}"!`
+
         await this.fetchMyTournaments()
         return tournament as Tournament
       } finally {
@@ -268,20 +269,31 @@ export const useTournamentStore = defineStore('tournament', {
         if (tErr) { this.error = tErr.message; return }
         this.activeTournament = t as Tournament
 
-        // Participants with profile info
+        // Step 1: get participant user_ids
         const { data: parts } = await supabase
           .from('tournament_participants')
-          .select(`
-            user_id,
-            profiles!tournament_participants_user_id_fkey(first_name, last_name, avatar_url)
-          `)
+          .select('user_id')
           .eq('tournament_id', id)
 
-        this.participants = (parts || []).map((p: any) => ({
-          user_id: p.user_id,
-          first_name: p.profiles?.first_name || '',
-          last_name: p.profiles?.last_name || '',
-          avatar_url: p.profiles?.avatar_url || '',
+        const userIds = (parts || []).map((p: any) => p.user_id)
+
+        // Step 2: fetch profiles for those user_ids
+        const profileRows = userIds.length > 0
+          ? (await supabase
+              .from('profiles')
+              .select('id, first_name, last_name, avatar_url')
+              .in('id', userIds)
+            ).data || []
+          : []
+
+        const profileMap2: Record<string, any> = {}
+        profileRows.forEach((pr: any) => { profileMap2[pr.id] = pr })
+
+        this.participants = userIds.map((uid: string) => ({
+          user_id: uid,
+          first_name: profileMap2[uid]?.first_name || '',
+          last_name:  profileMap2[uid]?.last_name  || '',
+          avatar_url: profileMap2[uid]?.avatar_url || '',
         }))
 
         // Matches

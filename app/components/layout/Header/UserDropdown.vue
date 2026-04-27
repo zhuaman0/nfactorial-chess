@@ -176,6 +176,8 @@ const navItems = [
   { icon: '📋', label: 'Quests',      sub: 'Daily challenges',        to: '/quests'     },
   { icon: '🏆', label: 'Leaderboard', sub: 'Global rankings',         to: '/leaderboard'},
   { icon: '👥', label: 'Players',     sub: 'Find & connect',          to: '/friends'    },
+  { icon: '🏆', label: 'Tournaments', sub: 'Compete & climb rankings', to: '/tournaments'},
+  { icon: '📰', label: 'News',        sub: 'Updates & chess tips',    to: '/news'       },
   { icon: '👤', label: 'Profile',     sub: 'Edit your info & avatar', to: '/profile'    },
 ]
 

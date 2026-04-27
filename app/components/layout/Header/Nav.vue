@@ -29,6 +29,7 @@ const items = [
   { label: 'Play Chess',  to: '/play',        badge: null },
   { label: 'Players',     to: '/friends',     badge: null },
   { label: 'Tournaments', to: '/tournaments', badge: null },
+  { label: 'News',        to: '/news',        badge: null },
 ]
 
 const isActive = (to: string) =>

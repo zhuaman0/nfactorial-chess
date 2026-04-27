@@ -1,24 +1,29 @@
 <template>
-  <button 
-    :type="type" 
+  <component 
+    :is="to ? NuxtLink : 'button'"
+    :to="to"
+    :type="!to ? type : undefined" 
     :class="[
-      'inline-flex items-center justify-center w-full rounded-lg font-semibold cursor-pointer',
+      'inline-flex items-center justify-center rounded-lg font-semibold cursor-pointer',
       'transition-all duration-200 ease-in-out relative font-sans',
-      'active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed',
+      'active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-center',
       sizeClasses,
       variantClasses,
     ]"
     :disabled="disabled || loading"
   >
-    <span v-if="loading" class="absolute w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+    <span v-if="loading" class="absolute w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
     <span :class="{ 'opacity-0': loading }">
       <slot></slot>
     </span>
-  </button>
+  </component>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, resolveComponent } from 'vue'
+import type { PropType } from 'vue'
+
+const NuxtLink = resolveComponent('NuxtLink')
 
 const props = defineProps({
   type: {
@@ -26,7 +31,7 @@ const props = defineProps({
     default: 'button'
   },
   variant: {
-    type: String as PropType<'primary' | 'outline' | 'primary-dark' | 'outline-dark'>,
+    type: String as PropType<'primary' | 'outline' | 'primary-dark' | 'outline-dark' | 'secondary'>,
     default: 'primary'
   },
   size: {
@@ -40,6 +45,10 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  to: {
+    type: String,
+    default: undefined
   }
 })
 
@@ -55,6 +64,9 @@ const sizeClasses = computed(() => {
 const variantClasses = computed(() => {
   if (props.variant === 'primary') {
     return 'bg-blue-500 text-white border-none hover:bg-blue-600'
+  }
+  if (props.variant === 'secondary') {
+    return 'bg-gray-100 text-gray-700 border-none hover:bg-gray-200'
   }
   if (props.variant === 'primary-dark') {
     return 'bg-white text-slate-900 border-none hover:bg-slate-100'

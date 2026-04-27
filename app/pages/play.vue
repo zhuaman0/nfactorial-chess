@@ -267,7 +267,7 @@ import { useProfileStore } from '~/stores/profile'
 import { useCustomizationStore, ARENA_THEMES } from '~/stores/customization'
 import ChessBoard from '~/components/chess/ChessBoard.vue'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ name: 'Play', middleware: 'auth' })
 
 const chessStore    = useChessStore()
 const profileStore  = useProfileStore()

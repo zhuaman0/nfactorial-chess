@@ -174,6 +174,180 @@
           </div>
         </div>
 
+        <!-- ═══ TAB: SCHEDULE / CALENDAR ═══ -->
+        <div v-if="activeTab === 'schedule'">
+
+          <!-- Not enough players yet -->
+          <div v-if="store.participants.length < 2" class="bg-slate-800/50 border border-white/10 rounded-3xl p-16 flex flex-col items-center text-center gap-5">
+            <div class="text-5xl">🗓️</div>
+            <div>
+              <h3 class="text-white font-bold text-lg mb-2">Waiting for players</h3>
+              <p class="text-slate-500 text-sm">Share the invite code — the schedule will appear once at least 2 players have joined.</p>
+            </div>
+          </div>
+
+          <!-- Calendar timeline -->
+          <div v-else class="flex flex-col gap-8">
+
+            <!-- Preview notice (tournament not started yet) -->
+            <div v-if="store.matches.length === 0" class="flex items-center justify-between bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-6 py-4 flex-wrap gap-3">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">🔮</span>
+                <div>
+                  <p class="text-yellow-300 font-bold text-sm">Preview Schedule</p>
+                  <p class="text-slate-500 text-xs">Dates are estimated. Start the tournament to lock in the official schedule.</p>
+                </div>
+              </div>
+              <button
+                v-if="isCreator && store.activeTournament?.status === 'upcoming'"
+                @click="handleActivate"
+                class="px-5 py-2 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl text-sm transition-colors flex-shrink-0"
+              >
+                ▶ Start Tournament
+              </button>
+            </div>
+
+            <!-- Legend -->
+            <div class="flex flex-wrap gap-3 text-xs">
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-400 font-semibold">🟠 Today</div>
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold">✅ Completed</div>
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-700 border border-slate-600 text-slate-400 font-semibold">⏳ Upcoming</div>
+            </div>
+
+            <!-- Date groups -->
+            <div v-for="(group, gi) in scheduleByDate" :key="group.dateKey" class="flex gap-4 animate-fade-in-up" :style="{ animationDelay: `${gi * 60}ms` }">
+
+              <!-- Date pill (left column) -->
+              <div class="flex-shrink-0 flex flex-col items-center gap-2" style="width:100px">
+                <div
+                  class="w-full rounded-2xl p-3 text-center border transition-all"
+                  :class="isToday(group.date)
+                    ? 'bg-orange-500/20 border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.2)]'
+                    : isPast(group.date)
+                    ? 'bg-slate-800/40 border-white/5'
+                    : 'bg-slate-800/70 border-white/10'"
+                >
+                  <p class="font-black text-2xl leading-none"
+                    :class="isToday(group.date) ? 'text-orange-400' : isPast(group.date) ? 'text-slate-600' : 'text-white'"
+                  >{{ group.date.getDate() }}</p>
+                  <p class="text-[10px] font-bold uppercase tracking-wider mt-0.5"
+                    :class="isToday(group.date) ? 'text-orange-400/70' : isPast(group.date) ? 'text-slate-600' : 'text-slate-400'"
+                  >{{ group.date.toLocaleDateString('en-US', { month: 'short' }) }}</p>
+                  <p class="text-[9px] mt-1"
+                    :class="isToday(group.date) ? 'text-orange-500 font-bold' : 'text-slate-600'"
+                  >{{ isToday(group.date) ? 'TODAY' : group.date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase() }}</p>
+                </div>
+                <!-- Vertical connector line -->
+                <div v-if="gi < scheduleByDate.length - 1" class="flex-1 w-px bg-white/10 min-h-8"></div>
+              </div>
+
+              <!-- Match cards (right column) -->
+              <div class="flex-1 flex flex-col gap-3 pb-2">
+                <div
+                  v-for="match in group.matches"
+                  :key="match.id"
+                  class="relative overflow-hidden rounded-2xl border p-4 transition-all duration-300"
+                  :class="match.result
+                    ? 'bg-slate-800/40 border-white/[0.06]'
+                    : isToday(group.date)
+                    ? 'bg-orange-500/[0.06] border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.08)]'
+                    : isPast(group.date)
+                    ? 'bg-slate-800/30 border-white/5 opacity-70'
+                    : 'bg-slate-800/60 border-white/10 hover:border-orange-500/30'"
+                >
+                  <!-- Round badge -->
+                  <div class="absolute top-3 right-3">
+                    <span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Rnd {{ match.round }}</span>
+                  </div>
+
+                  <!-- Players row -->
+                  <div class="flex items-center gap-3">
+                    <!-- Player A -->
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                      <div
+                        class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                        :class="match.result === 'a_wins' ? 'bg-emerald-500/30 text-emerald-300 ring-1 ring-emerald-500/40'
+                          : match.result === 'b_wins' ? 'bg-red-500/20 text-red-400'
+                          : 'bg-slate-700 text-slate-300'"
+                      >
+                        {{ match.player_a ? initials(match.player_a) : '?' }}
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-white font-semibold text-sm truncate"
+                          :class="match.result === 'a_wins' ? 'text-emerald-300' : match.result === 'b_wins' ? 'text-slate-500 line-through' : ''"
+                        >
+                          {{ match.player_a?.first_name }} {{ match.player_a?.last_name }}
+                          <span v-if="match.player_a?.user_id === currentUserId" class="text-orange-500/60 text-xs"> (you)</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Score center -->
+                    <div class="flex-shrink-0 flex flex-col items-center gap-0.5">
+                      <div v-if="match.result" class="flex items-center gap-2 font-black text-lg">
+                        <span :class="match.result === 'a_wins' ? 'text-emerald-400' : match.result === 'draw' ? 'text-yellow-400' : 'text-slate-600'">
+                          {{ match.result === 'a_wins' ? '1' : match.result === 'draw' ? '½' : '0' }}
+                        </span>
+                        <span class="text-slate-700 text-sm">–</span>
+                        <span :class="match.result === 'b_wins' ? 'text-emerald-400' : match.result === 'draw' ? 'text-yellow-400' : 'text-slate-600'">
+                          {{ match.result === 'b_wins' ? '1' : match.result === 'draw' ? '½' : '0' }}
+                        </span>
+                      </div>
+                      <div v-else class="px-3 py-1.5 rounded-xl bg-slate-700/60 text-slate-500 text-xs font-bold">VS</div>
+                      <span v-if="match.result" class="text-[10px] text-slate-500">
+                        {{ match.result === 'draw' ? 'Draw' : match.result === 'a_wins' ? match.player_a?.first_name + ' wins' : match.player_b?.first_name + ' wins' }}
+                      </span>
+                    </div>
+
+                    <!-- Player B -->
+                    <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                      <div class="min-w-0 text-right">
+                        <p class="text-white font-semibold text-sm truncate"
+                          :class="match.result === 'b_wins' ? 'text-emerald-300' : match.result === 'a_wins' ? 'text-slate-500 line-through' : ''"
+                        >
+                          {{ match.player_b?.first_name }} {{ match.player_b?.last_name }}
+                          <span v-if="match.player_b?.user_id === currentUserId" class="text-orange-500/60 text-xs"> (you)</span>
+                        </p>
+                      </div>
+                      <div
+                        class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                        :class="match.result === 'b_wins' ? 'bg-emerald-500/30 text-emerald-300 ring-1 ring-emerald-500/40'
+                          : match.result === 'a_wins' ? 'bg-red-500/20 text-red-400'
+                          : 'bg-slate-700 text-slate-300'"
+                      >
+                        {{ match.player_b ? initials(match.player_b) : '?' }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Play Now / Submit result inline -->
+                  <div v-if="!match.result && isPlayerInMatch(match) && !match.isPreview" class="mt-3 pt-3 border-t border-white/5 flex flex-col gap-2">
+                    <NuxtLink
+                      v-if="store.activeTournament?.status === 'active'"
+                      :to="`/tournaments/${route.params.id}/match/${match.id}`"
+                      class="w-full py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 hover:from-orange-400 hover:to-red-400 transition-all shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+                    >
+                      ▶ Play Now
+                    </NuxtLink>
+                    <div class="flex gap-2">
+                      <button @click="submitResult(match.id, 'a_wins')" class="flex-1 py-1.5 text-xs font-bold rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
+                        {{ match.player_a?.first_name }} Wins
+                      </button>
+                      <button @click="submitResult(match.id, 'draw')" class="flex-1 py-1.5 text-xs font-bold rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30 transition-colors">
+                        Draw
+                      </button>
+                      <button @click="submitResult(match.id, 'b_wins')" class="flex-1 py-1.5 text-xs font-bold rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
+                        {{ match.player_b?.first_name }} Wins
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         <!-- ═══ TAB: FIXTURES ═══ -->
         <div v-if="activeTab === 'fixtures'">
           <!-- No fixtures yet -->
@@ -248,9 +422,16 @@
                     </div>
                   </div>
 
-                  <!-- Submit result (only if user is in this match and no result yet) -->
-                  <div v-if="!match.result && isPlayerInMatch(match)" class="border-t border-white/5 pt-4">
-                    <p class="text-slate-500 text-xs text-center mb-3">Submit result</p>
+                  <!-- Play Now / Submit result (only if user is in this match and no result yet) -->
+                  <div v-if="!match.result && isPlayerInMatch(match)" class="border-t border-white/5 pt-4 flex flex-col gap-2">
+                    <NuxtLink
+                      v-if="store.activeTournament?.status === 'active'"
+                      :to="`/tournaments/${route.params.id}/match/${match.id}`"
+                      class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 hover:from-orange-400 hover:to-red-400 transition-all shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+                    >
+                      ▶ Play Now
+                    </NuxtLink>
+                    <p class="text-slate-600 text-[10px] text-center">or submit result manually</p>
                     <div class="flex gap-2 justify-center">
                       <button @click="submitResult(match.id, 'a_wins')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
                         {{ match.player_a?.first_name }} Wins
@@ -271,17 +452,19 @@
 
         <!-- ═══ TAB: MY MATCHES ═══ -->
         <div v-if="activeTab === 'my-matches'">
-          <div v-if="!currentUserId || store.myMatches(currentUserId).length === 0"
+          <div v-if="myMatchesList.length === 0"
             class="bg-slate-800/50 border border-white/10 rounded-3xl p-16 flex flex-col items-center text-center gap-4"
           >
             <div class="text-5xl">♟️</div>
             <p class="text-white font-bold">No matches found</p>
-            <p class="text-slate-500 text-sm">Your scheduled matches will appear here once the tournament starts.</p>
+            <p class="text-slate-500 text-sm">
+              {{ store.activeTournament?.status === 'upcoming' ? 'Your matches will appear once the tournament is started.' : 'You have no scheduled matches in this tournament.' }}
+            </p>
           </div>
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
-              v-for="match in store.myMatches(currentUserId!)"
+              v-for="match in myMatchesList"
               :key="match.id"
               class="bg-slate-800/60 border rounded-2xl p-5 transition-all"
               :class="match.result ? 'border-white/10' : 'border-orange-500/20'"
@@ -312,8 +495,16 @@
                 </div>
               </div>
 
-              <!-- Submit result -->
-              <div v-if="!match.result" class="border-t border-white/5 pt-4 mt-4">
+              <!-- Play Now / Submit result -->
+              <div v-if="!match.result" class="border-t border-white/5 pt-4 mt-4 flex flex-col gap-2">
+                <NuxtLink
+                  v-if="store.activeTournament?.status === 'active'"
+                  :to="`/tournaments/${route.params.id}/match/${match.id}`"
+                  class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 hover:from-orange-400 hover:to-red-400 transition-all shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+                >
+                  ▶ Play Now
+                </NuxtLink>
+                <p class="text-slate-600 text-[10px] text-center">or submit manually</p>
                 <div class="flex gap-2">
                   <button @click="submitResult(match.id, 'a_wins')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
                     {{ match.player_a?.first_name }} Wins
@@ -355,7 +546,7 @@
 <script setup lang="ts">
 import { useTournamentStore, type TournamentParticipant } from '~/stores/tournament'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ name: 'TournamentDetail', middleware: 'auth' })
 
 const route = useRoute()
 const store = useTournamentStore()
@@ -370,6 +561,7 @@ onMounted(() => store.fetchTournament(route.params.id as string))
 const activeTab = ref('standings')
 const tabs = [
   { id: 'standings',  label: 'Standings',  icon: '📊' },
+  { id: 'schedule',   label: 'Schedule',   icon: '🗓️' },
   { id: 'fixtures',   label: 'Fixtures',   icon: '📅' },
   { id: 'my-matches', label: 'My Matches', icon: '♟️' },
 ]
@@ -377,6 +569,105 @@ const tabs = [
 // ── Rounds derived ──
 const rounds = computed(() => [...new Set(store.matches.map(m => m.round))].sort((a, b) => a - b))
 function matchesByRound(r: number) { return store.matches.filter(m => m.round === r) }
+
+// ── My matches (local computed so Vue tracks both store.matches and currentUserId reactively) ──
+const myMatchesList = computed(() => {
+  const uid = currentUserId.value
+  if (!uid) return []
+  return store.matches.filter(m => m.player_a_id === uid || m.player_b_id === uid)
+})
+
+// ── Schedule: assign a date to each round spread across tournament duration ──
+// Parse a DATE string safely at local noon to avoid UTC-shift issues
+function parseLocalDate(s: string): Date {
+  if (!s) return new Date()
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, (m ?? 1) - 1, d ?? 1, 12, 0, 0)
+}
+
+const scheduleByDate = computed(() => {
+  if (!store.activeTournament) return []
+
+  const start      = parseLocalDate(store.activeTournament.start_date)
+  const end        = parseLocalDate(store.activeTournament.end_date)
+  const totalDays  = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000))
+
+  // If no matches yet, generate a PREVIEW from participants (round-robin skeleton)
+  const matchList = store.matches.length > 0
+    ? store.matches
+    : buildPreviewMatches()
+
+  const totalRounds = matchList.length > 0
+    ? Math.max(...matchList.map((m: any) => m.round))
+    : 1
+
+  function roundDate(round: number): Date {
+    const offset = totalRounds === 1
+      ? 0
+      : Math.round(((round - 1) / (totalRounds - 1)) * totalDays)
+    const d = new Date(start)
+    d.setDate(d.getDate() + offset)
+    return d
+  }
+
+  const map = new Map<string, { date: Date; dateKey: string; matches: any[] }>()
+  for (const match of matchList) {
+    const date = roundDate(match.round)
+    // Use local date key: YYYY-MM-DD
+    const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
+    if (!map.has(key)) map.set(key, { date, dateKey: key, matches: [] })
+    map.get(key)!.matches.push(match)
+  }
+
+  return [...map.values()].sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+})
+
+// Build a preview skeleton of matches from participants (round-robin)
+function buildPreviewMatches() {
+  const ps = store.participants
+  if (ps.length < 2) return []
+  const ids = [...ps]
+  if (ids.length % 2 !== 0) ids.push({ user_id: 'BYE', first_name: 'BYE', last_name: '', avatar_url: '' } as any)
+  const n = ids.length
+  const preview: any[] = []
+  for (let r = 0; r < n - 1; r++) {
+    for (let m = 0; m < n / 2; m++) {
+      const a = ids[m], b = ids[n - 1 - m]
+      if (a.user_id !== 'BYE' && b.user_id !== 'BYE') {
+        preview.push({ id: `preview-${r}-${m}`, round: r + 1, result: null,
+          player_a_id: a.user_id, player_b_id: b.user_id,
+          player_a: a, player_b: b, isPreview: true })
+      }
+    }
+    const last = ids.pop()!; ids.splice(1, 0, last)
+  }
+  return preview
+}
+
+function fmtScheduleDate(d: Date) {
+  const today    = new Date()
+  const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1)
+  const same = (a: Date, b: Date) => a.toDateString() === b.toDateString()
+  if (same(d, today))    return { label: 'Today',    sub: d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) }
+  if (same(d, tomorrow)) return { label: 'Tomorrow', sub: d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) }
+  return {
+    label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+    sub:   d.toLocaleDateString('en-US', { year: 'numeric' }),
+  }
+}
+
+function isToday(d: Date) {
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() &&
+         d.getMonth() === now.getMonth() &&
+         d.getDate() === now.getDate()
+}
+function isPast(d: Date) {
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const cmp = new Date(d); cmp.setHours(0, 0, 0, 0)
+  return cmp < now
+}
 
 // ── Helpers ──
 function initials(p: { first_name: string; last_name: string }) {

@@ -1,0 +1,8 @@
+{
+  "hello": "Hello",
+  "welcome": "Welcome to nFactorial",
+  "onboarding": {
+    "log_in": "Log In",
+    "sign_up": "Sign Up"
+  }
+}

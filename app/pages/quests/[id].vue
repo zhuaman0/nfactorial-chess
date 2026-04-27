@@ -254,7 +254,7 @@
 import { useQuestsStore } from '~/stores/quests'
 import type { Quest } from '~/stores/quests'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ name: 'QuestDetail', middleware: 'auth' })
 
 const route = useRoute()
 const questsStore = useQuestsStore()
