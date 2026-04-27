@@ -6,6 +6,7 @@ export interface Profile {
   last_name: string
   avatar_url: string
   points: number
+  is_pro: boolean
   created_at: string
   updated_at: string
 }
@@ -48,6 +49,10 @@ export const useProfileStore = defineStore('profile', {
       const f = this.profile.first_name?.[0] || ''
       const l = this.profile.last_name?.[0] || ''
       return (f + l).toUpperCase() || '?'
+    },
+
+    isPro(): boolean {
+      return this.profile?.is_pro ?? false
     },
   },
 

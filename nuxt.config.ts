@@ -11,6 +11,14 @@ function copyStockfish() {
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  runtimeConfig: {
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? '',
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
+    supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY ?? '',
+    public: {
+      stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? '',
+    },
+  },
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: [

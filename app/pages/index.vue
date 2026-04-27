@@ -8,6 +8,9 @@
       <HomeMeetSection />
       <HomeAiCoachSection />
       <HomeTournamentSection />
+      <div v-if="isMounted && !profileStore.isPro" class="max-w-md mx-auto w-full">
+        <UpgradeToPro />
+      </div>
       <HomeNewsSection />
     </main>
   </div>
@@ -22,8 +25,10 @@ definePageMeta({
 })
 
 const profileStore = useProfileStore()
+const isMounted = ref(false)
 
 onMounted(async () => {
   await profileStore.fetchProfile()
+  isMounted.value = true
 })
 </script>

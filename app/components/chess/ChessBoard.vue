@@ -103,7 +103,14 @@ defineProps({
   disabled: { type: Boolean, default: false },
 })
 
+const emit = defineEmits<{
+  // Fired after a player move succeeds. play.vue uses this to compare
+  // material before/after the AI's reply and trigger HP + advisor.
+  'player-move': [payload: { fenBefore: string; fenAfter: string }]
+}>()
+
 const chessStore = useChessStore()
+const advisor = useAdvisor()
 const customization = useCustomizationStore()
 const board = computed(() => chessStore.board)
 
@@ -131,6 +138,9 @@ const isPossibleCapture = (row: number, col: number) => {
   return (chessStore.possibleMoves as any[]).some((m: any) => m.to === sq && m.captured)
 }
 
+const PIECE_VALUES: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }
+const getPieceValue = (type?: string) => (type ? (PIECE_VALUES[type] ?? 0) : 0)
+
 const handleSquareClick = (row: number, col: number) => {
   const square = coordsToSquare(row, col)
 
@@ -140,7 +150,22 @@ const handleSquareClick = (row: number, col: number) => {
   }
 
   if (chessStore.selectedSquare) {
+    const fenBefore = chessStore.fen
+    const capturedValue = getPieceValue(chessStore.game.get(square as any)?.type)
     const ok = chessStore.makeMove(chessStore.selectedSquare, square)
+
+    if (ok) {
+      // Instant praise when player captures a valuable piece
+      if (capturedValue >= 9) {
+        advisor.show("BY THE KING! You captured their QUEEN! GLORY! 👑", 'praise', 4000)
+      } else if (capturedValue >= 5) {
+        advisor.show("Excellent! Their Rook is yours, My Lord! ⚔️", 'praise', 3000)
+      } else if (capturedValue >= 3) {
+        advisor.show("Well played! You took their piece! Press on! ⚔️", 'praise', 3000)
+      }
+      emit('player-move', { fenBefore, fenAfter: chessStore.fen })
+    }
+
     if (!ok) {
       const piece = chessStore.game.get(square as any)
       if (piece && piece.color === chessStore.turn) {
