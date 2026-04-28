@@ -1,5 +1,4 @@
 <template>
-  <!-- Main nav: 4 links + More -->
   <nav class="hidden md:flex items-center gap-1">
     <NuxtLink
       v-for="item in mainItems"
@@ -13,94 +12,81 @@
       {{ item.label }}
     </NuxtLink>
 
-    <!-- More button -->
-    <button
-      @click="sidebarOpen = true"
-      class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150"
-    >
-      More
-      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
-  </nav>
-
-  <!-- Sidebar overlay -->
-  <Teleport to="body">
-    <Transition name="fade">
-      <div
-        v-if="sidebarOpen"
-        class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-        @click="sidebarOpen = false"
-      />
-    </Transition>
-
-    <Transition name="slide">
-      <div
-        v-if="sidebarOpen"
-        class="fixed top-0 right-0 z-50 h-full w-72 bg-white shadow-2xl flex flex-col"
+    <!-- More dropdown -->
+    <div class="relative" ref="dropdownRef">
+      <button
+        @click="open = !open"
+        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-150"
+        :class="open ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
       >
-        <!-- Sidebar header -->
-        <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">♟️</span>
-            <span class="font-extrabold text-slate-900 text-base">Menu</span>
-          </div>
-          <button
-            @click="sidebarOpen = false"
-            class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors"
-          >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        More
+        <svg
+          class="w-3.5 h-3.5 transition-transform duration-200"
+          :class="open ? 'rotate-180' : ''"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
-        <!-- All nav links -->
-        <nav class="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1">
+      <Transition name="dropdown">
+        <div
+          v-if="open"
+          class="absolute top-full left-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50"
+        >
           <NuxtLink
-            v-for="item in allItems"
+            v-for="item in moreItems"
             :key="item.to"
             :to="item.to"
-            @click="sidebarOpen = false"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+            @click="open = false"
+            class="flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors duration-150"
             :class="isActive(item.to)
               ? 'bg-slate-900 text-white'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
           >
-            <span class="text-lg leading-none">{{ item.icon }}</span>
+            <span class="text-base leading-none">{{ item.icon }}</span>
             {{ item.label }}
           </NuxtLink>
-        </nav>
-      </div>
-    </Transition>
-  </Teleport>
+        </div>
+      </Transition>
+    </div>
+  </nav>
 </template>
 
 <script setup lang="ts">
 const route = useRoute()
-const sidebarOpen = ref(false)
+const open  = ref(false)
+const dropdownRef = ref<HTMLElement | null>(null)
 
-// Close sidebar on route change
-watch(() => route.path, () => { sidebarOpen.value = false })
+// Close on outside click
+onMounted(() => {
+  document.addEventListener('click', onClickOutside)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', onClickOutside)
+})
+function onClickOutside(e: MouseEvent) {
+  if (dropdownRef.value && !dropdownRef.value.contains(e.target as Node)) {
+    open.value = false
+  }
+}
+
+// Close on route change
+watch(() => route.path, () => { open.value = false })
 
 const mainItems = [
-  { label: 'Game',       to: '/'         },
-  { label: 'Quests',     to: '/quests'   },
-  { label: 'Play Chess', to: '/play'     },
-  { label: 'Players',    to: '/friends'  },
+  { label: 'Game',       to: '/'        },
+  { label: 'Quests',     to: '/quests'  },
+  { label: 'Play Chess', to: '/play'    },
+  { label: 'Players',    to: '/friends' },
 ]
 
-const allItems = [
-  { label: 'Game',         to: '/',             icon: '🏠' },
-  { label: 'Quests',       to: '/quests',       icon: '⚔️' },
-  { label: 'Play Chess',   to: '/play',         icon: '♟️' },
-  { label: 'Players',      to: '/friends',      icon: '👥' },
-  { label: 'Leaderboard',  to: '/leaderboard',  icon: '🏆' },
-  { label: 'Tournaments',  to: '/tournaments',  icon: '🎯' },
-  { label: 'News',         to: '/news',         icon: '📰' },
-  { label: 'Shop',         to: '/shop',         icon: '🏪' },
-  { label: 'Upgrade',      to: '/upgrade',      icon: '👑' },
+const moreItems = [
+  { label: 'Leaderboard', to: '/leaderboard', icon: '🏆' },
+  { label: 'Tournaments', to: '/tournaments', icon: '🎯' },
+  { label: 'News',        to: '/news',        icon: '📰' },
+  { label: 'Shop',        to: '/shop',        icon: '🏪' },
+  { label: 'Upgrade',     to: '/upgrade',     icon: '👑' },
 ]
 
 const isActive = (to: string) =>
@@ -108,9 +94,7 @@ const isActive = (to: string) =>
 </script>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease }
-.fade-enter-from, .fade-leave-to       { opacity: 0 }
-
-.slide-enter-active, .slide-leave-active { transition: transform 0.25s ease }
-.slide-enter-from, .slide-leave-to       { transform: translateX(100%) }
+.dropdown-enter-active { transition: opacity 0.15s ease, transform 0.15s ease }
+.dropdown-leave-active { transition: opacity 0.1s ease,  transform 0.1s ease  }
+.dropdown-enter-from, .dropdown-leave-to { opacity: 0; transform: translateY(-6px) }
 </style>
