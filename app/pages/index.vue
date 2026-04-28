@@ -21,7 +21,7 @@ import { useProfileStore } from '~/stores/profile'
 
 definePageMeta({
   name: 'Home',
-  middleware: 'auth'
+  
 })
 
 const profileStore = useProfileStore()

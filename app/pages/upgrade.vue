@@ -18,6 +18,6 @@
 
 <script setup lang="ts">
 import { useProfileStore } from '~/stores/profile'
-definePageMeta({ name: 'Upgrade', middleware: 'auth' })
+definePageMeta({ name: 'Upgrade' })
 const profileStore = useProfileStore()
 </script>

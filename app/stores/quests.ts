@@ -93,7 +93,7 @@ export const useQuestsStore = defineStore('quests', {
       const supabase = useSupabaseClient()
       // auth.uid() inside fn_start_quest uses the JWT from the request header —
       // no need to read user.value.id client-side (avoids undefined timing issue).
-      const { data, error } = await supabase.rpc('fn_start_quest', { p_quest_id: questId })
+      const { data, error } = await (supabase.rpc as any)('fn_start_quest', { p_quest_id: questId })
       if (error) console.error('startQuest error:', error.message)
       if (data) {
         const row = data as UserQuest
@@ -105,7 +105,7 @@ export const useQuestsStore = defineStore('quests', {
 
     async completeQuest(questId: string, score: number) {
       const supabase = useSupabaseClient()
-      const { data, error } = await supabase.rpc('fn_complete_quest', {
+      const { data, error } = await (supabase.rpc as any)('fn_complete_quest', {
         p_quest_id: questId,
         p_score: score,
       })

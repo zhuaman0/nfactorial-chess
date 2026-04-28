@@ -30,6 +30,7 @@ const items = [
   { label: 'Players',     to: '/friends',     badge: null },
   { label: 'Tournaments', to: '/tournaments', badge: null },
   { label: 'News',        to: '/news',        badge: null },
+  { label: '🏪 Shop',    to: '/shop',        badge: null },
 ]
 
 const isActive = (to: string) =>

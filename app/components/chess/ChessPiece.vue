@@ -6,7 +6,14 @@
     <!-- Pixel skin: Unicode chess symbols -->
     <span v-if="customization.skin === 'pixel'" :class="pixelClass">{{ pixelChar }}</span>
 
-    <!-- SVG skins (classic / neon / royal share same SVGs, CSS filter does the work) -->
+    <!-- Image-based themed skins (naruto etc.) — falls back to SVG if no image for this piece yet -->
+    <img
+      v-else-if="skinImageSrc"
+      :src="skinImageSrc"
+      class="w-full h-full object-contain drop-shadow-lg"
+    />
+
+    <!-- SVG skins (classic / neon / royal + themed fallback) -->
     <template v-else>
       <!-- White King -->
       <svg v-if="type === 'k' && color === 'w'" viewBox="0 0 45 45" class="w-full h-full">
@@ -123,6 +130,7 @@
 
 <script setup lang="ts">
 import { useCustomizationStore } from '~/stores/customization'
+import { SKIN_IMAGE_MAP } from '~/data/skins'
 
 const props = defineProps({
   type: { type: String as PropType<'p' | 'n' | 'b' | 'r' | 'q' | 'k'>, required: true },
@@ -137,6 +145,11 @@ const PIXEL_MAP: Record<string, string> = {
 }
 
 const pixelChar = computed(() => PIXEL_MAP[`${props.type}-${props.color}`] ?? '?')
+
+const skinImageSrc = computed<string | null>(() => {
+  const images = SKIN_IMAGE_MAP[customization.skin]
+  return images?.[`${props.type}-${props.color}`] ?? null
+})
 
 const pixelClass = computed(() => [
   'select-none leading-none font-bold',

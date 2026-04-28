@@ -162,7 +162,7 @@ import { useChatStore }        from '~/stores/chat'
 import { useLeaderboardStore } from '~/stores/leaderboard'
 import type { FriendProfile }  from '~/stores/friends'
 
-definePageMeta({ name: 'Friends', middleware: 'auth' })
+definePageMeta({ name: 'Friends' })
 
 const friendsStore     = useFriendsStore()
 const chatStore        = useChatStore()
