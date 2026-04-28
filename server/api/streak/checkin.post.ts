@@ -11,30 +11,30 @@ export default defineEventHandler(async (event) => {
     .eq('id', user.id)
     .single()
 
-  // Profile missing or streak columns not yet migrated — return zeros silently
-  if (error || !profile) {
-    return { current_streak: 0, longest_streak: 0, already_checked_in: true }
-  }
+  if (error || !profile) throw createError({ statusCode: 404, statusMessage: 'Profile not found' })
 
   const now = new Date()
   const last = profile.last_active_at ? new Date(profile.last_active_at) : null
   const hoursSinceLast = last ? (now.getTime() - last.getTime()) / 3_600_000 : Infinity
 
-  let newStreak = profile.current_streak ?? 0
+  let newStreak = profile.current_streak
 
   if (hoursSinceLast < 24) {
+    // Already checked in within the last 24 h — no change
     return {
-      current_streak: newStreak,
-      longest_streak: profile.longest_streak ?? 0,
+      current_streak: profile.current_streak,
+      longest_streak: profile.longest_streak,
       already_checked_in: true,
     }
   } else if (hoursSinceLast < 48) {
-    newStreak = newStreak + 1
+    // Consecutive day — increment
+    newStreak = profile.current_streak + 1
   } else {
+    // Missed a day (or first ever visit) — reset to 1
     newStreak = 1
   }
 
-  const newLongest = Math.max(newStreak, profile.longest_streak ?? 0)
+  const newLongest = Math.max(newStreak, profile.longest_streak)
 
   await supabase
     .from('profiles')
