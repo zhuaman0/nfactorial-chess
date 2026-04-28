@@ -4,292 +4,295 @@
       <Transition name="page-fade" mode="out-in">
 
         <!-- ══════════════════════════════════════════ LOBBY ══ -->
-        <div v-if="!gameStarted" key="lobby" class="flex flex-col gap-8">
+        <div v-if="!gameStarted" key="lobby" class="flex flex-col gap-6">
 
-          <!-- Page title -->
-          <div>
-            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Play Chess</h1>
-            <p class="text-slate-400 mt-1 text-sm">Choose your mode, customize your setup, and enter the arena.</p>
+          <!-- Banner -->
+          <div
+            class="relative overflow-hidden rounded-3xl shadow-2xl transition-all duration-500"
+            :class="lobbyTab === 'siege'
+              ? 'bg-gradient-to-r from-red-700 via-orange-600 to-amber-500'
+              : lobbyTab === 'train'
+                ? 'bg-gradient-to-r from-indigo-700 via-violet-600 to-purple-600'
+                : 'bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500'"
+          >
+            <div class="absolute inset-0 opacity-10 pointer-events-none" :style="chessBoardBg"></div>
+            <div class="absolute -top-10 -right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative flex items-center justify-between px-10 py-8">
+              <div>
+                <h1 class="text-4xl font-extrabold text-white drop-shadow-lg">
+                  {{ lobbyTab === 'siege' ? '⚔️ Shadow Siege' : lobbyTab === 'train' ? '🧬 AI Mirror Training' : 'Play Chess' }}
+                </h1>
+                <p class="text-orange-100/80 mt-1">
+                  {{ lobbyTab === 'siege' ? 'Raid players — fight their Shadow AI — steal their gold' : lobbyTab === 'train' ? 'Your AI learns from every game you play and grows stronger' : 'Set up your match and enter the arena' }}
+                </p>
+              </div>
+              <span class="text-7xl drop-shadow-2xl select-none hidden sm:block">
+                {{ lobbyTab === 'siege' ? '🏰' : lobbyTab === 'train' ? '🧬' : '♟' }}
+              </span>
+            </div>
           </div>
 
-          <!-- ── Mode selector cards ── -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-            <!-- Practice -->
+          <!-- Tab switcher -->
+          <div class="flex gap-2 p-1 rounded-2xl bg-slate-800/50 border border-white/8 w-fit">
             <button
-              class="relative overflow-hidden rounded-2xl border-2 p-6 text-left transition-all duration-200 hover:-translate-y-0.5 group"
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
               :class="lobbyTab === 'practice'
-                ? 'border-orange-500 bg-gradient-to-br from-orange-500 to-amber-500 shadow-xl shadow-orange-500/30'
-                : 'border-slate-200 bg-white hover:border-orange-300 hover:shadow-lg'"
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                : 'text-slate-400 hover:text-white'"
               @click="lobbyTab = 'practice'"
-            >
-              <div class="absolute inset-0 opacity-5 pointer-events-none" :style="chessBoardBg" />
-              <div class="relative flex flex-col gap-3">
-                <div class="flex items-center justify-between">
-                  <span class="text-4xl">♟</span>
-                  <div v-if="lobbyTab === 'practice'" class="w-6 h-6 rounded-full bg-white/30 flex items-center justify-center">
-                    <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                  </div>
-                </div>
-                <div>
-                  <p class="font-extrabold text-lg" :class="lobbyTab === 'practice' ? 'text-white' : 'text-slate-900'">Practice</p>
-                  <p class="text-sm mt-0.5" :class="lobbyTab === 'practice' ? 'text-orange-100/80' : 'text-slate-400'">Play vs AI at any difficulty</p>
-                </div>
-                <div class="flex gap-1.5">
-                  <span v-for="i in 4" :key="i" class="w-2 h-2 rounded-full" :class="lobbyTab === 'practice' ? 'bg-white/60' : 'bg-slate-300'" />
-                </div>
-              </div>
-            </button>
-
-            <!-- Train -->
+            >♟ Practice</button>
             <button
-              class="relative overflow-hidden rounded-2xl border-2 p-6 text-left transition-all duration-200 hover:-translate-y-0.5 group"
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
               :class="lobbyTab === 'train'
-                ? 'border-violet-500 bg-gradient-to-br from-violet-600 to-purple-600 shadow-xl shadow-violet-500/30'
-                : 'border-slate-200 bg-white hover:border-violet-300 hover:shadow-lg'"
+                ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30'
+                : 'text-slate-400 hover:text-white'"
               @click="lobbyTab = 'train'; loadTrainProfile()"
-            >
-              <div class="absolute inset-0 opacity-5 pointer-events-none" :style="chessBoardBg" />
-              <div class="relative flex flex-col gap-3">
-                <div class="flex items-center justify-between">
-                  <span class="text-4xl">🧬</span>
-                  <div v-if="lobbyTab === 'train'" class="w-6 h-6 rounded-full bg-white/30 flex items-center justify-center">
-                    <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                  </div>
-                </div>
-                <div>
-                  <p class="font-extrabold text-lg" :class="lobbyTab === 'train' ? 'text-white' : 'text-slate-900'">AI Mirror</p>
-                  <p class="text-sm mt-0.5" :class="lobbyTab === 'train' ? 'text-violet-100/80' : 'text-slate-400'">Train against your own style</p>
-                </div>
-                <div class="flex gap-1.5">
-                  <span v-for="i in 4" :key="i" class="w-2 h-2 rounded-full" :class="lobbyTab === 'train' ? 'bg-white/60' : 'bg-slate-300'" />
-                </div>
-              </div>
-            </button>
-
-            <!-- Shadow Siege -->
+            >🧬 Train</button>
             <button
-              class="relative overflow-hidden rounded-2xl border-2 p-6 text-left transition-all duration-200 hover:-translate-y-0.5 group"
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
               :class="lobbyTab === 'siege'
-                ? 'border-red-500 bg-gradient-to-br from-red-600 to-orange-600 shadow-xl shadow-red-500/30'
-                : 'border-slate-200 bg-white hover:border-red-300 hover:shadow-lg'"
+                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                : 'text-slate-400 hover:text-white'"
               @click="lobbyTab = 'siege'"
-            >
-              <div class="absolute inset-0 opacity-5 pointer-events-none" :style="chessBoardBg" />
-              <div class="relative flex flex-col gap-3">
-                <div class="flex items-center justify-between">
-                  <span class="text-4xl">⚔️</span>
-                  <div v-if="lobbyTab === 'siege'" class="w-6 h-6 rounded-full bg-white/30 flex items-center justify-center">
-                    <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                  </div>
-                </div>
-                <div>
-                  <p class="font-extrabold text-lg" :class="lobbyTab === 'siege' ? 'text-white' : 'text-slate-900'">Shadow Siege</p>
-                  <p class="text-sm mt-0.5" :class="lobbyTab === 'siege' ? 'text-red-100/80' : 'text-slate-400'">Raid players, steal their gold</p>
-                </div>
-                <div class="flex gap-1.5">
-                  <span v-for="i in 4" :key="i" class="w-2 h-2 rounded-full" :class="lobbyTab === 'siege' ? 'bg-white/60' : 'bg-slate-300'" />
-                </div>
-              </div>
-            </button>
-
+            >⚔️ Shadow Siege</button>
           </div>
 
           <!-- Shadow Siege lobby -->
           <RaidLobby v-if="lobbyTab === 'siege'" @start-raid="onStartRaid" />
 
           <!-- Train lobby -->
-          <div v-else-if="lobbyTab === 'train'" class="flex flex-col gap-5">
-            <div class="bg-white border border-slate-200 rounded-2xl p-7 shadow-sm">
-              <div class="flex items-center gap-3 mb-6">
-                <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center text-2xl shrink-0">🧬</div>
-                <div>
-                  <h2 class="text-lg font-extrabold text-slate-900">Your AI Mirror</h2>
-                  <p class="text-slate-400 text-sm">Learns your style — grows stronger every game</p>
-                </div>
-              </div>
+          <div v-else-if="lobbyTab === 'train'" class="flex flex-col gap-6">
+            <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-violet-500/30 rounded-3xl p-8 shadow-2xl">
+              <div class="absolute -top-8 -right-8 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div class="relative flex flex-col gap-6">
 
-              <!-- Stats -->
-              <div v-if="trainProfileLoading" class="flex items-center gap-3 text-slate-400 text-sm py-6 justify-center">
-                <svg class="animate-spin w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                Analyzing your game history…
-              </div>
-              <div v-else class="grid grid-cols-3 gap-3 mb-6">
-                <div class="rounded-xl bg-violet-50 border border-violet-100 p-4 text-center">
-                  <p class="text-2xl font-black text-violet-600">{{ trainShadowProfile?.estimated_elo ?? 800 }}</p>
-                  <p class="text-xs text-slate-400 mt-1 font-medium">Mirror ELO</p>
+                <!-- Header -->
+                <div class="flex items-center gap-3">
+                  <span class="text-3xl">🧬</span>
+                  <div>
+                    <h2 class="text-xl font-extrabold text-white">Your AI Mirror</h2>
+                    <p class="text-slate-400 text-sm mt-0.5">The AI studies your games and mimics your style — getting stronger as you improve</p>
+                  </div>
                 </div>
-                <div class="rounded-xl bg-violet-50 border border-violet-100 p-4 text-center">
-                  <p class="text-2xl font-black text-violet-600">{{ trainShadowProfile?.games_analyzed ?? 0 }}</p>
-                  <p class="text-xs text-slate-400 mt-1 font-medium">Games learned</p>
-                </div>
-                <div class="rounded-xl bg-violet-50 border border-violet-100 p-4 text-center">
-                  <p class="text-2xl font-black text-violet-600">{{ trainShadowProfile?.opening_moves.length ?? 0 }}</p>
-                  <p class="text-xs text-slate-400 mt-1 font-medium">Moves memorized</p>
-                </div>
-              </div>
 
-              <!-- How it works -->
-              <div class="rounded-xl bg-slate-50 border border-slate-100 p-4 flex flex-col gap-3 mb-6">
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">How it works</p>
-                <div v-for="(step, i) in trainSteps" :key="i" class="flex items-start gap-3">
-                  <span class="w-5 h-5 rounded-full bg-violet-100 text-violet-600 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">{{ i + 1 }}</span>
-                  <p class="text-sm text-slate-500" v-html="step"></p>
+                <!-- Stats cards -->
+                <div v-if="trainProfileLoading" class="flex items-center gap-3 text-slate-400 text-sm py-4">
+                  <svg class="animate-spin w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                  Analyzing your game history…
                 </div>
-              </div>
+                <div v-else class="grid grid-cols-3 gap-4">
+                  <div class="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 text-center">
+                    <p class="text-2xl font-black text-violet-300">{{ trainShadowProfile?.estimated_elo ?? 800 }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Mirror ELO</p>
+                  </div>
+                  <div class="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 text-center">
+                    <p class="text-2xl font-black text-violet-300">{{ trainShadowProfile?.games_analyzed ?? 0 }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Games learned</p>
+                  </div>
+                  <div class="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 text-center">
+                    <p class="text-2xl font-black text-violet-300">{{ trainShadowProfile?.opening_moves.length ?? 0 }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Moves memorized</p>
+                  </div>
+                </div>
 
-              <button
-                class="w-full py-4 rounded-xl font-extrabold text-base text-white bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2"
-                @click="startTrainGame()"
-              >
-                🧬 {{ trainShadowProfile?.games_analyzed ? 'Start Training' : 'Start Training (AI starts easy)' }}
-              </button>
+                <!-- How it works -->
+                <div class="bg-slate-800/60 border border-white/8 rounded-2xl p-5 flex flex-col gap-2">
+                  <p class="text-sm font-bold text-white mb-1">How it works</p>
+                  <div class="flex items-start gap-3 text-sm text-slate-400">
+                    <span class="text-violet-400 mt-0.5 shrink-0">①</span>
+                    <span>The AI opens with your own most-played moves — learn to defend against yourself</span>
+                  </div>
+                  <div class="flex items-start gap-3 text-sm text-slate-400">
+                    <span class="text-violet-400 mt-0.5 shrink-0">②</span>
+                    <span>After the opening, it plays at depth based on your estimated ELO (currently <strong class="text-white">depth {{ trainCurrentDepth }}</strong>)</span>
+                  </div>
+                  <div class="flex items-start gap-3 text-sm text-slate-400">
+                    <span class="text-violet-400 mt-0.5 shrink-0">③</span>
+                    <span>Every game you play is saved — the Mirror gets smarter as your win rate grows</span>
+                  </div>
+                </div>
+
+                <!-- Start button -->
+                <button
+                  class="w-full py-4 rounded-2xl font-extrabold text-lg text-white shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  style="background: linear-gradient(135deg,#7c3aed,#9333ea)"
+                  @click="startTrainGame()"
+                >
+                  {{ trainShadowProfile?.games_analyzed ? 'Start Training' : 'Start Training (no history yet — AI starts easy)' }}
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Practice lobby grid -->
-          <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <!-- ── Left 2 cols ── -->
-            <div class="lg:col-span-2 flex flex-col gap-5">
+            <div class="lg:col-span-2 flex flex-col gap-6">
 
               <!-- Choose Opponent -->
-              <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                <div class="flex items-center gap-2 mb-5">
-                  <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-base shrink-0">🎯</div>
-                  <h2 class="text-base font-extrabold text-slate-900">Choose Difficulty</h2>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                  <button
-                    v-for="m in MODES"
-                    :key="m.value"
-                    class="relative flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-150 text-left hover:-translate-y-0.5"
-                    :class="selectedMode === m.value
-                      ? `${m.activeBg} ${m.activeBorder}`
-                      : 'border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-white'"
-                    @click="selectedMode = m.value"
-                  >
-                    <span class="text-3xl leading-none shrink-0">{{ m.icon }}</span>
-                    <div class="flex-1 min-w-0">
-                      <p class="font-bold text-sm" :class="selectedMode === m.value ? m.activeText : 'text-slate-800'">{{ m.label }}</p>
-                      <p class="text-xs text-slate-400 mt-0.5 truncate">{{ m.desc }}</p>
-                      <div class="flex gap-1 mt-1.5">
-                        <span
-                          v-for="d in 4" :key="d"
-                          class="w-2 h-1.5 rounded-full transition-colors"
-                          :class="d <= m.dots
-                            ? (selectedMode === m.value ? m.dotActive : 'bg-slate-300')
-                            : 'bg-slate-100'"
-                        />
-                      </div>
-                    </div>
-                    <div
-                      v-if="selectedMode === m.value"
-                      class="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
-                      :class="m.checkBg"
+              <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-orange-500/30 rounded-3xl p-7 shadow-2xl">
+                <div class="absolute -top-8 -right-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative">
+                  <div class="flex items-center gap-2 mb-5">
+                    <span class="text-xl">🎯</span>
+                    <h2 class="text-lg font-extrabold text-white">Choose Opponent</h2>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <button
+                      v-for="m in MODES"
+                      :key="m.value"
+                      class="relative flex flex-col items-start gap-3 p-5 rounded-2xl border transition-all duration-200 text-left group hover:-translate-y-0.5"
+                      :class="selectedMode === m.value
+                        ? `${m.activeBg} ${m.activeBorder} shadow-lg`
+                        : 'bg-slate-800/60 border-white/8 hover:border-white/20'"
+                      @click="selectedMode = m.value"
                     >
-                      <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                    </div>
-                  </button>
+                      <!-- Selected checkmark -->
+                      <div
+                        v-if="selectedMode === m.value"
+                        class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                        :class="m.checkBg"
+                      >✓</div>
+
+                      <span class="text-3xl leading-none">{{ m.icon }}</span>
+                      <div>
+                        <p class="font-bold text-sm leading-tight" :class="selectedMode === m.value ? m.activeText : 'text-white'">{{ m.label }}</p>
+                        <p class="text-xs mt-0.5 text-slate-500 leading-tight">{{ m.desc }}</p>
+                      </div>
+                      <!-- Difficulty dots -->
+                      <div class="flex gap-1 mt-1">
+                        <span
+                          v-for="d in 4"
+                          :key="d"
+                          class="w-1.5 h-1.5 rounded-full"
+                          :class="d <= m.dots
+                            ? (selectedMode === m.value ? m.dotActive : 'bg-slate-400')
+                            : 'bg-slate-700'"
+                        ></span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <!-- Piece Style -->
-              <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                <div class="flex items-center justify-between mb-5">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-base shrink-0">♛</div>
-                    <h2 class="text-base font-extrabold text-slate-900">Piece Style</h2>
-                  </div>
-                  <NuxtLink to="/shop" class="flex items-center gap-1 text-xs font-bold text-amber-500 hover:text-amber-600 transition-colors bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
-                    🏪 Shop
-                  </NuxtLink>
-                </div>
-                <div class="grid grid-cols-4 gap-3">
-                  <button
-                    v-for="s in SKINS" :key="s.value"
-                    class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-150 hover:-translate-y-0.5"
-                    :class="customization.skin === s.value
-                      ? 'border-orange-400 bg-orange-50 shadow-sm'
-                      : 'border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-white'"
-                    @click="customization.setSkin(s.value)"
-                  >
-                    <span class="text-3xl leading-none" :class="s.filterClass">♛</span>
-                    <p class="font-bold text-xs text-center leading-tight" :class="customization.skin === s.value ? 'text-orange-600' : 'text-slate-700'">{{ s.label }}</p>
-                    <div v-if="customization.skin === s.value" class="w-3.5 h-3.5 rounded-full bg-orange-500 flex items-center justify-center">
-                      <svg class="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-orange-500/30 rounded-3xl p-7 shadow-2xl">
+                <div class="absolute -bottom-8 -left-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative">
+                  <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xl">♛</span>
+                      <h2 class="text-lg font-extrabold text-white">Piece Style</h2>
                     </div>
-                  </button>
-
-                  <template v-for="ps in premiumSkinsForSelector" :key="ps.id">
-                    <button
-                      v-if="customization.isSkinOwned(ps.id)"
-                      class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-150 hover:-translate-y-0.5"
-                      :class="customization.skin === ps.id
-                        ? 'border-amber-400 bg-amber-50 shadow-sm'
-                        : 'border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-white'"
-                      @click="customization.setSkin(ps.id)"
-                    >
-                      <img v-if="ps.images['k-w']" :src="ps.images['k-w']" class="w-8 h-8 object-contain" />
-                      <span v-else class="text-3xl leading-none">♛</span>
-                      <p class="font-bold text-xs text-center" :class="customization.skin === ps.id ? 'text-amber-600' : 'text-slate-700'">{{ ps.name }}</p>
-                    </button>
-                    <NuxtLink
-                      v-else to="/shop"
-                      class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-amber-300 transition-all duration-150 relative group"
-                    >
-                      <div class="absolute inset-0 rounded-xl bg-white/80 flex flex-col items-center justify-center gap-0.5">
-                        <span class="text-lg">🔒</span>
-                        <span class="text-[10px] text-amber-500 font-bold">🪙 {{ ps.price }}</span>
-                      </div>
-                      <img v-if="ps.images['k-w']" :src="ps.images['k-w']" class="w-8 h-8 object-contain opacity-20" />
-                      <span v-else class="text-3xl opacity-20">♛</span>
-                      <p class="text-xs text-slate-400 font-semibold">{{ ps.name }}</p>
+                    <NuxtLink to="/shop" class="text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
+                      🏪 Shop
                     </NuxtLink>
-                  </template>
+                  </div>
+                  <div class="grid grid-cols-4 gap-3">
+                    <!-- Free skins -->
+                    <button
+                      v-for="s in SKINS"
+                      :key="s.value"
+                      class="flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
+                      :class="customization.skin === s.value
+                        ? 'bg-orange-500/15 border-orange-500/40 shadow-lg shadow-orange-500/10'
+                        : 'bg-slate-800/60 border-white/8 hover:border-white/20'"
+                      @click="customization.setSkin(s.value)"
+                    >
+                      <span class="text-4xl leading-none" :class="s.filterClass">♛</span>
+                      <div class="text-center">
+                        <p class="font-bold text-xs leading-tight" :class="customization.skin === s.value ? 'text-orange-300' : 'text-white'">{{ s.label }}</p>
+                        <p class="text-[10px] text-slate-600 mt-0.5">{{ s.desc }}</p>
+                      </div>
+                      <div v-if="customization.skin === s.value" class="w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center text-white text-[9px] font-black">✓</div>
+                    </button>
+
+                    <!-- Premium skins from catalog -->
+                    <template v-for="ps in premiumSkinsForSelector" :key="ps.id">
+                      <!-- Owned: selectable -->
+                      <button
+                        v-if="customization.isSkinOwned(ps.id)"
+                        class="flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
+                        :class="customization.skin === ps.id
+                          ? 'bg-amber-500/15 border-amber-500/40 shadow-lg shadow-amber-500/10'
+                          : 'bg-slate-800/60 border-white/8 hover:border-white/20'"
+                        @click="customization.setSkin(ps.id)"
+                      >
+                        <img v-if="ps.images['k-w']" :src="ps.images['k-w']" class="w-10 h-10 object-contain drop-shadow" />
+                        <span v-else class="text-4xl leading-none">♛</span>
+                        <div class="text-center">
+                          <p class="font-bold text-xs leading-tight" :class="customization.skin === ps.id ? 'text-amber-300' : 'text-white'">{{ ps.name }}</p>
+                          <p class="text-[10px] text-amber-600 mt-0.5">{{ ps.tag }}</p>
+                        </div>
+                        <div v-if="customization.skin === ps.id" class="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center text-white text-[9px] font-black">✓</div>
+                      </button>
+
+                      <!-- Not owned: locked -->
+                      <NuxtLink
+                        v-else
+                        to="/shop"
+                        class="flex flex-col items-center gap-3 p-4 rounded-2xl border border-dashed border-white/10 bg-slate-800/40 hover:border-amber-500/30 transition-all duration-200 hover:-translate-y-0.5 relative group"
+                      >
+                        <div class="absolute inset-0 rounded-2xl bg-slate-900/60 flex items-center justify-center">
+                          <div class="flex flex-col items-center gap-1">
+                            <span class="text-2xl">🔒</span>
+                            <span class="text-[10px] text-amber-400 font-bold">🪙 {{ ps.price }}</span>
+                          </div>
+                        </div>
+                        <img v-if="ps.images['k-w']" :src="ps.images['k-w']" class="w-10 h-10 object-contain opacity-20" />
+                        <span v-else class="text-4xl leading-none opacity-20">♛</span>
+                        <p class="font-bold text-xs text-slate-600">{{ ps.name }}</p>
+                      </NuxtLink>
+                    </template>
+                  </div>
                 </div>
               </div>
 
             </div>
 
             <!-- ── Right col: Arena + Start ── -->
-            <div class="flex flex-col gap-5">
+            <div class="flex flex-col gap-6">
 
               <!-- Arena Theme -->
-              <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex-1">
-                <div class="flex items-center gap-2 mb-5">
-                  <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-base shrink-0">🏟</div>
-                  <h2 class="text-base font-extrabold text-slate-900">Board Theme</h2>
-                </div>
-                <div class="flex flex-col gap-2">
-                  <button
-                    v-for="(t, key) in ARENA_THEMES" :key="key"
-                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 transition-all duration-150 w-full text-left"
-                    :class="customization.theme === key
-                      ? 'border-orange-400 bg-orange-50'
-                      : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'"
-                    @click="customization.setTheme(key as any)"
-                  >
-                    <div class="grid grid-cols-2 rounded-md overflow-hidden shrink-0 ring-1 ring-black/10 shadow-sm">
-                      <div class="w-5 h-5" :style="{ backgroundColor: t.light }" />
-                      <div class="w-5 h-5" :style="{ backgroundColor: t.dark }" />
-                      <div class="w-5 h-5" :style="{ backgroundColor: t.dark }" />
-                      <div class="w-5 h-5" :style="{ backgroundColor: t.light }" />
-                    </div>
-                    <span class="text-sm font-semibold flex-1" :class="customization.theme === key ? 'text-orange-600' : 'text-slate-700'">{{ t.name }}</span>
-                    <div v-if="customization.theme === key" class="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center shrink-0">
-                      <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                    </div>
-                  </button>
+              <div class="relative overflow-hidden bg-white border border-orange-500/20 rounded-3xl p-7 shadow-2xl flex-1">
+                <div class="absolute -top-8 -right-8 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative">
+                  <div class="flex items-center gap-2 mb-5">
+                    <span class="text-xl">🏟</span>
+                    <h2 class="text-lg font-extrabold text-slate-900">Arena</h2>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button
+                      v-for="(t, key) in ARENA_THEMES"
+                      :key="key"
+                      class="flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-150 w-full text-left"
+                      :class="customization.theme === key
+                        ? 'border-orange-500/40 bg-orange-50 shadow-sm'
+                        : 'border-slate-200 hover:border-orange-500/20 hover:bg-slate-50'"
+                      @click="customization.setTheme(key as any)"
+                    >
+                      <!-- 2×2 swatch -->
+                      <div class="grid grid-cols-2 rounded-lg overflow-hidden shrink-0 ring-1 ring-black/10 shadow-sm">
+                        <div class="w-5 h-5" :style="{ backgroundColor: t.light }"></div>
+                        <div class="w-5 h-5" :style="{ backgroundColor: t.dark }"></div>
+                        <div class="w-5 h-5" :style="{ backgroundColor: t.dark }"></div>
+                        <div class="w-5 h-5" :style="{ backgroundColor: t.light }"></div>
+                      </div>
+                      <span class="text-sm font-semibold flex-1" :class="customization.theme === key ? 'text-orange-600' : 'text-slate-700'">{{ t.name }}</span>
+                      <div v-if="customization.theme === key" class="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white text-[10px] font-black shrink-0">✓</div>
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <!-- Start button -->
               <button
-                class="w-full py-5 rounded-2xl font-extrabold text-lg text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-90 active:scale-[0.98] transition-all shadow-xl shadow-orange-500/25 flex items-center justify-center gap-2"
+                class="w-full py-5 rounded-2xl font-extrabold text-lg text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-90 active:scale-[0.98] transition-all shadow-xl shadow-orange-500/30 flex items-center justify-center gap-3"
                 @click="startGame"
               >
-                <span>⚔️</span> Start Game
+                <span class="text-2xl">⚔️</span>
+                Start Game
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
@@ -722,12 +725,6 @@ function materialScore(fen: string): number {
   }
   return score
 }
-
-const trainSteps = [
-  'The AI opens with your own most-played moves — learn to defend against yourself.',
-  `Plays at depth matched to your estimated ELO (currently <strong class="text-slate-700">depth ${trainCurrentDepth}</strong>).`,
-  'Every game you play is saved — the Mirror gets smarter as you improve.',
-]
 
 // Snapshot material right after player moves, before AI replies.
 let materialSnapshot = 0
