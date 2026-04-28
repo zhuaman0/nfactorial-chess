@@ -7,6 +7,9 @@ export interface Profile {
   avatar_url: string
   points: number
   is_pro: boolean
+  gold_balance: number
+  defense_wins: number
+  raid_wins: number
   created_at: string
   updated_at: string
 }

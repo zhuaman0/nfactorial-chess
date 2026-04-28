@@ -7,20 +7,52 @@
         <div v-if="!gameStarted" key="lobby" class="flex flex-col gap-6">
 
           <!-- Banner -->
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 shadow-2xl">
+          <div
+            class="relative overflow-hidden rounded-3xl shadow-2xl transition-all duration-500"
+            :class="lobbyTab === 'siege'
+              ? 'bg-gradient-to-r from-red-700 via-orange-600 to-amber-500'
+              : 'bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500'"
+          >
             <div class="absolute inset-0 opacity-10 pointer-events-none" :style="chessBoardBg"></div>
             <div class="absolute -top-10 -right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="relative flex items-center justify-between px-10 py-8">
               <div>
-                <h1 class="text-4xl font-extrabold text-white drop-shadow-lg">Play Chess</h1>
-                <p class="text-orange-100/80 mt-1">Set up your match and enter the arena</p>
+                <h1 class="text-4xl font-extrabold text-white drop-shadow-lg">
+                  {{ lobbyTab === 'siege' ? '⚔️ Shadow Siege' : 'Play Chess' }}
+                </h1>
+                <p class="text-orange-100/80 mt-1">
+                  {{ lobbyTab === 'siege' ? 'Raid players — fight their Shadow AI — steal their gold' : 'Set up your match and enter the arena' }}
+                </p>
               </div>
-              <span class="text-7xl drop-shadow-2xl select-none hidden sm:block">♟</span>
+              <span class="text-7xl drop-shadow-2xl select-none hidden sm:block">
+                {{ lobbyTab === 'siege' ? '🏰' : '♟' }}
+              </span>
             </div>
           </div>
 
-          <!-- Main grid -->
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Tab switcher -->
+          <div class="flex gap-2 p-1 rounded-2xl bg-slate-800/50 border border-white/8 w-fit">
+            <button
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+              :class="lobbyTab === 'practice'
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                : 'text-slate-400 hover:text-white'"
+              @click="lobbyTab = 'practice'"
+            >♟ Practice</button>
+            <button
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+              :class="lobbyTab === 'siege'
+                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                : 'text-slate-400 hover:text-white'"
+              @click="lobbyTab = 'siege'"
+            >⚔️ Shadow Siege</button>
+          </div>
+
+          <!-- Shadow Siege lobby -->
+          <RaidLobby v-if="lobbyTab === 'siege'" @start-raid="onStartRaid" />
+
+          <!-- Practice lobby grid -->
+          <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <!-- ── Left 2 cols ── -->
             <div class="lg:col-span-2 flex flex-col gap-6">
@@ -150,131 +182,221 @@
               </button>
 
             </div>
-          </div>
-        </div>
+          </div><!-- end practice grid -->
+        </div><!-- end lobby -->
 
         <!-- ══════════════════════════════════════════ GAME ══ -->
         <div v-else key="game">
-          <div class="flex items-center justify-between mb-4">
-            <button
-              class="flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors"
-              @click="backToLobby"
-            >
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 12H5M12 5l-7 7 7 7" />
-              </svg>
-              Back to Setup
-            </button>
-            <div class="flex items-center gap-2">
-              <span
-                class="text-xs font-semibold px-2.5 py-1 rounded-full border"
-                :class="MODES.find(m => m.value === selectedMode)?.badgeClass"
-              >
-                {{ MODES.find(m => m.value === selectedMode)?.label }}
-              </span>
-              <span class="text-xs text-slate-500">{{ SKINS.find(s => s.value === customization.skin)?.label }} skin</span>
-            </div>
-          </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
-            <!-- ── Left: Board ── -->
-            <div class="flex flex-col gap-3">
-              <div class="flex items-center justify-between bg-slate-800/60 border border-white/10 rounded-xl px-4 py-2.5">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-8 h-8 rounded-full border-2 border-white/10 flex items-center justify-center text-base select-none"
-                    :class="selectedMode === 'ai' ? 'bg-gradient-to-br from-purple-900 to-indigo-950' : 'bg-slate-950'"
-                  >
-                    {{ selectedMode === 'ai' ? '🧠' : '🤖' }}
-                  </div>
-                  <div>
-                    <p class="text-white text-sm font-semibold leading-tight">{{ opponentName }}</p>
-                    <p class="text-slate-500 text-xs leading-tight">{{ opponentLabel }}</p>
-                  </div>
-                </div>
-                <div v-if="chessStore.isAIThinking" class="flex items-center gap-1.5 text-blue-400 text-xs font-medium">
-                  <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-                  thinking…
-                </div>
-                <div v-else-if="chessStore.turn === 'b' && !chessStore.isGameOver" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+          <!-- Dark arena wrapper -->
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-white/8 shadow-2xl p-5 md:p-7">
+
+            <!-- Subtle chess-pattern ambient glow -->
+            <div class="pointer-events-none absolute inset-0 opacity-[0.03]" :style="chessBoardBg" />
+            <div class="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-64 bg-orange-500/20 rounded-full blur-3xl" />
+
+            <!-- ── Top bar ── -->
+            <div class="relative flex items-center justify-between mb-6">
+              <button
+                class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 text-sm transition-all"
+                @click="backToLobby"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 12H5M12 5l-7 7 7 7" />
+                </svg>
+                Setup
+              </button>
+
+              <!-- VS label in the center -->
+              <div class="flex items-center gap-3">
+                <span class="text-slate-600 text-xs font-bold uppercase tracking-widest">Arena</span>
+                <span
+                  class="text-xs font-bold px-3 py-1 rounded-full border"
+                  :class="MODES.find(m => m.value === selectedMode)?.badgeClass"
+                >{{ MODES.find(m => m.value === selectedMode)?.label }}</span>
               </div>
 
-              <!-- Castle HP Bar -->
-              <div class="bg-slate-800/60 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
-                <span class="text-xl select-none flex-shrink-0">🏰</span>
-                <div class="flex-1">
-                  <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Castle HP</span>
-                    <span class="text-xs font-black tabular-nums" :class="hpTextColor">
-                      {{ chessStore.castleHp }} / 100
+              <!-- Engine loader -->
+              <div v-if="!sfReady" class="flex items-center gap-1.5 text-orange-400 text-xs font-semibold">
+                <div class="w-3 h-3 border-2 border-orange-400/30 border-t-orange-400 rounded-full animate-spin"></div>
+                Loading…
+              </div>
+              <div v-else class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#4ade80]" title="Engine ready" />
+            </div>
+
+            <div class="relative grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6 items-start">
+
+              <!-- ── LEFT: board column ── -->
+              <div class="flex flex-col gap-3">
+
+                <!-- Opponent row -->
+                <div
+                  class="flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-300"
+                  :class="chessStore.turn === 'b' && !chessStore.isGameOver
+                    ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_20px_rgba(249,115,22,0.15)]'
+                    : 'bg-white/4 border-white/8'"
+                >
+                  <div
+                    class="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ring-1"
+                    :class="isRaidGame
+                      ? 'bg-gradient-to-br from-red-900 to-orange-950 ring-red-500/30'
+                      : selectedMode === 'ai'
+                        ? 'bg-gradient-to-br from-purple-900 to-indigo-950 ring-purple-500/30'
+                        : 'bg-slate-800 ring-white/10'"
+                  >{{ isRaidGame ? '👤' : selectedMode === 'ai' ? '🧠' : '🤖' }}</div>
+                  <div class="flex-1">
+                    <p class="text-white text-sm font-bold leading-tight">{{ opponentName }}</p>
+                    <p class="text-slate-500 text-xs mt-0.5">{{ opponentLabel }}</p>
+                    <p v-if="isRaidGame && !raidStore.shadowExhausted" class="text-red-400 text-[10px] mt-0.5 font-semibold">
+                      Shadow move {{ raidStore.shadowMoveIndex + 1 }}/{{ raidStore.shadowProfile?.opening_moves.length }}
+                    </p>
+                  </div>
+                  <div v-if="chessStore.isAIThinking" class="flex items-center gap-2 text-orange-400 text-xs font-semibold">
+                    <span class="flex gap-0.5">
+                      <span class="w-1 h-3 bg-orange-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+                      <span class="w-1 h-3 bg-orange-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+                      <span class="w-1 h-3 bg-orange-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+                    </span>
+                    Thinking
+                  </div>
+                  <div v-else-if="chessStore.turn === 'b' && !chessStore.isGameOver"
+                    class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#4ade80] animate-pulse" />
+                </div>
+
+                <!-- Castle HP -->
+                <div class="flex items-center gap-4 px-4 py-3 rounded-2xl bg-white/4 border border-white/8">
+                  <span class="text-2xl select-none">🏰</span>
+                  <div class="flex-1">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Castle HP</span>
+                      <span class="text-xs font-black tabular-nums" :class="hpTextColor">{{ chessStore.castleHp }}<span class="text-slate-600 font-normal"> / 100</span></span>
+                    </div>
+                    <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden ring-1 ring-white/5">
+                      <div
+                        class="h-full rounded-full transition-all duration-700 ease-out"
+                        :class="hpBarColor"
+                        :style="{ width: `${chessStore.castleHp}%` }"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Board -->
+                <ChessBoard
+                  :disabled="chessStore.turn === 'b' || chessStore.isAIThinking || chessStore.isGameOver || !sfReady"
+                  @player-move="onPlayerMove"
+                />
+
+                <!-- Player row -->
+                <div
+                  class="flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-300"
+                  :class="chessStore.turn === 'w' && !chessStore.isGameOver && !chessStore.isAIThinking
+                    ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_20px_rgba(249,115,22,0.15)]'
+                    : 'bg-white/4 border-white/8'"
+                >
+                  <div class="relative flex-shrink-0">
+                    <UiAvatar :src="avatarSrc" :fallback="profileStore.initials || '?'" size="sm" />
+                    <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-white border-2 border-slate-900 shadow" />
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-white text-sm font-bold leading-tight">{{ profileStore.fullName || user?.email || 'You' }}</p>
+                    <p class="text-slate-500 text-xs mt-0.5">White · Playing as you</p>
+                  </div>
+                  <div v-if="chessStore.turn === 'w' && !chessStore.isGameOver && !chessStore.isAIThinking"
+                    class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#4ade80] animate-pulse" />
+                </div>
+              </div>
+
+              <!-- ── RIGHT: sidebar ── -->
+              <div class="flex flex-col gap-4">
+
+                <!-- Game Over -->
+                <Transition name="slide-up">
+                  <div
+                    v-if="chessStore.isGameOver"
+                    class="relative overflow-hidden rounded-2xl border border-orange-500/30 bg-gradient-to-br from-slate-800 to-slate-900 p-5 text-center"
+                  >
+                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 w-32 h-20 bg-orange-500/20 blur-2xl pointer-events-none" />
+                    <div class="relative">
+                      <div class="text-5xl mb-3">{{ gameOverEmoji }}</div>
+                      <h3 class="text-white font-extrabold text-lg mb-1">{{ gameOverTitle }}</h3>
+                      <p class="text-slate-400 text-sm mb-2 leading-snug">{{ gameOverDescription }}</p>
+                      <div v-if="isRaidGame" class="mb-4 py-2 px-4 rounded-xl text-sm font-bold"
+                        :class="chessStore.isCheckmate && chessStore.turn === 'b'
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : 'bg-red-500/20 text-red-400 border border-red-500/30'"
+                      >
+                        {{ chessStore.isCheckmate && chessStore.turn === 'b'
+                          ? `🪙 +${raidStore.goldStake} gold stolen!`
+                          : `🪙 -${raidStore.goldStake} gold lost` }}
+                      </div>
+                      <div class="flex flex-col gap-2">
+                        <button
+                          class="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-orange-500/25"
+                          @click="chessStore.resetGame()"
+                        >⚔️ Play Again</button>
+                        <button
+                          class="w-full py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-semibold text-sm hover:bg-white/10 transition-all"
+                          @click="backToLobby"
+                        >Change Setup</button>
+                      </div>
+                    </div>
+                  </div>
+                </Transition>
+
+                <!-- Move History -->
+                <div class="rounded-2xl bg-white/4 border border-white/8 overflow-hidden">
+                  <div class="px-4 py-3 border-b border-white/8 flex items-center justify-between bg-white/3">
+                    <div class="flex items-center gap-2">
+                      <span class="text-base">📜</span>
+                      <p class="text-slate-300 text-xs font-bold uppercase tracking-widest">Move History</p>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-600 tabular-nums bg-white/5 px-2 py-0.5 rounded-full">
+                      {{ chessStore.moveHistory.length }}
                     </span>
                   </div>
-                  <div class="w-full h-2.5 bg-slate-700/80 rounded-full overflow-hidden">
+                  <div ref="historyEl" class="overflow-y-auto p-2 font-mono text-sm" style="min-height:200px; max-height:340px">
+                    <div v-if="chessStore.moveHistory.length === 0"
+                      class="flex flex-col items-center justify-center py-12 gap-2 text-slate-700">
+                      <span class="text-4xl">♟</span>
+                      <p class="text-xs italic">Make your first move!</p>
+                    </div>
                     <div
-                      class="h-full rounded-full transition-all duration-700 ease-out"
-                      :class="hpBarColor"
-                      :style="{ width: `${chessStore.castleHp}%` }"
-                    ></div>
+                      v-for="(pair, i) in movePairs"
+                      :key="i"
+                      class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors group"
+                    >
+                      <span class="text-slate-700 text-[11px] w-5 shrink-0 tabular-nums group-hover:text-slate-500 transition-colors">{{ i + 1 }}.</span>
+                      <span class="text-white font-semibold w-14 text-xs">{{ pair[0] }}</span>
+                      <span class="text-slate-500 w-14 text-xs">{{ pair[1] ?? '' }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <ChessBoard
-                :disabled="chessStore.turn === 'b' || chessStore.isAIThinking || chessStore.isGameOver || !sfReady"
-                @player-move="onPlayerMove"
-              />
-
-              <div class="flex items-center justify-between bg-slate-800/60 border border-white/10 rounded-xl px-4 py-2.5">
-                <div class="flex items-center gap-3">
-                  <UiAvatar :src="avatarSrc" :fallback="profileStore.initials || '?'" size="sm" />
-                  <div>
-                    <p class="text-white text-sm font-semibold leading-tight">{{ profileStore.fullName || user?.email || 'You' }}</p>
-                    <p class="text-slate-500 text-xs leading-tight">Playing as White</p>
-                  </div>
-                </div>
-                <div v-if="chessStore.turn === 'w' && !chessStore.isGameOver && !chessStore.isAIThinking" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-              </div>
-            </div>
-
-            <!-- ── Right: Sidebar ── -->
-            <div class="flex flex-col gap-4">
-              <div class="bg-slate-800/60 border border-white/10 rounded-2xl p-4 flex flex-col min-h-[280px] max-h-[380px]">
-                <p class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">Move History</p>
-                <div ref="historyEl" class="flex-1 overflow-y-auto space-y-0.5 font-mono text-sm pr-1">
-                  <div
-                    v-for="(pair, i) in movePairs"
-                    :key="i"
-                    class="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/5 transition-colors"
+                <!-- Actions -->
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    :disabled="chessStore.moveHistory.length < 2"
+                    class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/5 border border-white/8 text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 text-xs font-semibold transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+                    @click="chessStore.undoMove()"
                   >
-                    <span class="text-slate-600 text-xs w-5 shrink-0">{{ i + 1 }}.</span>
-                    <span class="text-white w-16">{{ pair[0] }}</span>
-                    <span class="text-slate-400 w-16">{{ pair[1] ?? '' }}</span>
-                  </div>
-                  <div v-if="chessStore.moveHistory.length === 0" class="text-slate-500 italic text-center py-6 text-xs">
-                    Make your first move!
-                  </div>
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+                    </svg>
+                    Take Back
+                  </button>
+                  <button
+                    class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500/20 hover:border-orange-500/40 text-xs font-semibold transition-all"
+                    @click="chessStore.resetGame()"
+                  >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
+                    </svg>
+                    New Game
+                  </button>
                 </div>
-              </div>
 
-              <div v-if="!sfReady" class="bg-slate-800/60 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
-                <div class="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin shrink-0"></div>
-                <p class="text-slate-400 text-sm">Loading chess engine…</p>
               </div>
-
-              <Transition name="slide-up">
-                <div
-                  v-if="chessStore.isGameOver"
-                  class="bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-2xl p-5"
-                >
-                  <div class="text-3xl mb-2">{{ gameOverEmoji }}</div>
-                  <h3 class="text-white font-bold text-lg mb-1">{{ gameOverTitle }}</h3>
-                  <p class="text-slate-400 text-sm mb-4">{{ gameOverDescription }}</p>
-                  <div class="flex gap-2">
-                    <UiButton variant="primary" size="sm" @click="chessStore.resetGame()">Play Again</UiButton>
-                    <UiButton variant="outline" size="sm" @click="backToLobby">Change Setup</UiButton>
-                  </div>
-                </div>
-              </Transition>
             </div>
           </div>
         </div>
@@ -288,13 +410,16 @@
 import { useChessStore, type Difficulty } from '~/stores/chess'
 import { useProfileStore } from '~/stores/profile'
 import { useCustomizationStore, ARENA_THEMES } from '~/stores/customization'
+import { useRaidStore, type RaidTarget } from '~/stores/raid'
 import ChessBoard from '~/components/chess/ChessBoard.vue'
+import RaidLobby from '~/components/raid/RaidLobby.vue'
 
 definePageMeta({ name: 'Play', middleware: 'auth' })
 
 const chessStore    = useChessStore()
 const profileStore  = useProfileStore()
 const customization = useCustomizationStore()
+const raidStore     = useRaidStore()
 const user          = useSupabaseUser()
 const historyEl     = ref<HTMLElement | null>(null)
 const advisor       = useAdvisor()
@@ -303,6 +428,8 @@ const { isReady: sfReady, init: sfInit, getBestMove, destroy: sfDestroy } = useS
 
 const gameStarted  = ref(false)
 const selectedMode = ref<Difficulty>('medium')
+const lobbyTab     = ref<'practice' | 'siege'>('practice')
+const isRaidGame   = ref(false)
 
 // ── Castle HP bar colours ──────────────────────────────────────────────────
 const hpBarColor = computed(() => {
@@ -412,6 +539,7 @@ const avatarSrc = computed(() => {
 })
 
 function startGame() {
+  isRaidGame.value = false
   chessStore.setDifficulty(selectedMode.value)
   chessStore.resetGame()
   gameStarted.value = true
@@ -419,17 +547,37 @@ function startGame() {
   advisor.show("The battle begins! Show no mercy, My Lord! ⚔️", 'neutral', 3500)
 }
 
+async function onStartRaid(target: RaidTarget, stake: number) {
+  await raidStore.startRaid(target, stake)
+  isRaidGame.value = true
+  chessStore.setDifficulty(raidStore.shadowDifficulty)
+  chessStore.resetGame()
+  gameStarted.value = true
+  sfInit()
+  const name = `${target.first_name} ${target.last_name}`.trim()
+  advisor.show(`Raiding ${name}'s kingdom! Their Shadow fights for them! ⚔️`, 'panic', 4000)
+}
+
 function backToLobby() {
   sfDestroy()
   chessStore.resetGame()
   gameStarted.value = false
+  isRaidGame.value = false
+  raidStore.clearRaid()
   advisor.hide()
 }
 
-const opponentName = computed(() =>
-  selectedMode.value === 'ai' ? 'Grandmaster AI' : 'Stockfish Bot'
-)
+const opponentName = computed(() => {
+  if (isRaidGame.value && raidStore.activeDefender) {
+    const d = raidStore.activeDefender
+    return `Shadow of ${d.first_name} ${d.last_name}`.trim()
+  }
+  return selectedMode.value === 'ai' ? 'Grandmaster AI' : 'Stockfish Bot'
+})
 const opponentLabel = computed(() => {
+  if (isRaidGame.value && raidStore.shadowProfile) {
+    return `Est. ${raidStore.shadowProfile.estimated_elo} ELO · ${raidStore.shadowProfile.games_analyzed} games learned`
+  }
   if (selectedMode.value === 'ai') return 'Max Depth · Depth 18'
   const map: Record<string, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
   return map[selectedMode.value] ?? selectedMode.value
@@ -454,6 +602,25 @@ watch(
     if (!started || turn !== 'b' || gameOver || !ready || chessStore.isAIThinking) return
     chessStore.isAIThinking = true
     try {
+      // Shadow Siege: play from the defender's opening book first
+      if (isRaidGame.value && !raidStore.shadowExhausted) {
+        const shadowSan = raidStore.nextShadowMove
+        if (shadowSan) {
+          const { Chess } = await import('chess.js')
+          const game = new Chess(chessStore.fen)
+          try {
+            const m = game.move(shadowSan)
+            if (m && !chessStore.isGameOver) {
+              chessStore.makeMove(m.from, m.to, m.promotion ?? 'q')
+              raidStore.advanceShadowMove()
+              return
+            }
+          } catch {
+            // Shadow move illegal in this position — fall through to Stockfish
+          }
+        }
+      }
+      // Fallback: Stockfish at the defender's estimated difficulty
       const move = await getBestMove(chessStore.fen, chessStore.difficulty)
       if (move && !chessStore.isGameOver) {
         chessStore.makeMove(move.from, move.to, move.promotion ?? 'q')
@@ -467,10 +634,26 @@ watch(
 
 watch(() => chessStore.isGameOver, async (over) => {
   if (!over) return
-  if (chessStore.isCheckmate && chessStore.turn === 'b') {
-    advisor.show("CHECKMATE! You conquered the realm! ALL HAIL THE CHAMPION! 🏆", 'praise', 0)
-  } else if (chessStore.isCheckmate && chessStore.turn === 'w') {
-    advisor.show("The castle has fallen… But every knight learns from defeat! 💙", 'panic', 0)
+  const playerWon = chessStore.isCheckmate && chessStore.turn === 'b'
+  const playerLost = chessStore.isCheckmate && chessStore.turn === 'w'
+
+  if (playerWon) {
+    if (isRaidGame.value) {
+      advisor.show(`RAID SUCCESS! You crushed the Shadow! 🪙 +${raidStore.goldStake} gold stolen! 👑`, 'praise', 0)
+    } else {
+      advisor.show("CHECKMATE! You conquered the realm! ALL HAIL THE CHAMPION! 🏆", 'praise', 0)
+    }
+  } else if (playerLost) {
+    if (isRaidGame.value) {
+      advisor.show(`The Shadow held the line! 🪙 -${raidStore.goldStake} gold lost. Regroup and try again!`, 'panic', 0)
+    } else {
+      advisor.show("The castle has fallen… But every knight learns from defeat! 💙", 'panic', 0)
+    }
+  }
+
+  if (isRaidGame.value && user.value) {
+    await raidStore.completeRaid(user.value.id, playerWon)
+    await profileStore.fetchProfile() // refresh gold balance
   }
   await chessStore.saveGame()
 })

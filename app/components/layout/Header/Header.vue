@@ -13,6 +13,11 @@
         <LanguageSelector />
 
         <template v-if="user">
+          <!-- Gold balance (always visible when logged in) -->
+          <span v-if="isMounted && profileStore.profile" class="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-amber-500">
+            🪙 {{ profileStore.profile.gold_balance }}
+          </span>
+
           <!-- Free user: show buy button -->
           <NuxtLink
             v-if="isMounted && !profileStore.isPro"
