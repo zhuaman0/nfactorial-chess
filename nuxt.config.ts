@@ -49,7 +49,13 @@ export default defineNuxtConfig({
       include: undefined,
       exclude: ['/', '/login', '/register', '/auth/login', '/auth/register', '/confirm'],
       cookieRedirect: false,
-    }
+    },
+    clientOptions: {
+      auth: {
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      },
+    },
   },
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css',
