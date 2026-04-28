@@ -217,7 +217,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ name: 'News', middleware: 'auth' })
+definePageMeta({ name: 'News' })
 
 const chessBoardBg = {
   backgroundImage: `repeating-conic-gradient(#ffffff 0% 25%, transparent 0% 50%)`,

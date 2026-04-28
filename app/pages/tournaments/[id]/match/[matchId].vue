@@ -290,7 +290,7 @@ import { useTournamentStore } from '~/stores/tournament'
 import { useCustomizationStore, ARENA_THEMES } from '~/stores/customization'
 import ChessPiece from '~/components/chess/ChessPiece.vue'
 
-definePageMeta({ name: 'TournamentMatch', middleware: 'auth' })
+definePageMeta({ name: 'TournamentMatch' })
 
 const route        = useRoute()
 const tournamentId = route.params.id as string
@@ -464,20 +464,21 @@ onMounted(async () => {
 
   if (!m) { loading.value = false; return }
   matchData.value = m as MatchData
+  const match = matchData.value
 
   // Load player profiles
   const { data: profiles } = await supabase
     .from('profiles').select('id, first_name, last_name, avatar_url')
-    .in('id', [m.player_a_id, m.player_b_id])
+    .in('id', [match.player_a_id, match.player_b_id])
 
   const pm: Record<string, Profile> = {}
   ;(profiles || []).forEach((p: any) => { pm[p.id] = p })
-  playerA.value = pm[m.player_a_id] || null
-  playerB.value = pm[m.player_b_id] || null
+  playerA.value = pm[match.player_a_id] || null
+  playerB.value = pm[match.player_b_id] || null
 
   loading.value = false
 
-  if (!isPlayer.value || m.result) return
+  if (!isPlayer.value || match.result) return
 
   // Set up Supabase Realtime channel — use userId as presence key
   channel = supabase.channel(`tournament-match:${matchId}`, {

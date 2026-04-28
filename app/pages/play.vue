@@ -180,11 +180,17 @@
               <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-orange-500/30 rounded-3xl p-7 shadow-2xl">
                 <div class="absolute -bottom-8 -left-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div class="relative">
-                  <div class="flex items-center gap-2 mb-5">
-                    <span class="text-xl">♛</span>
-                    <h2 class="text-lg font-extrabold text-white">Piece Style</h2>
+                  <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xl">♛</span>
+                      <h2 class="text-lg font-extrabold text-white">Piece Style</h2>
+                    </div>
+                    <NuxtLink to="/shop" class="text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
+                      🏪 Shop
+                    </NuxtLink>
                   </div>
                   <div class="grid grid-cols-4 gap-3">
+                    <!-- Free skins -->
                     <button
                       v-for="s in SKINS"
                       :key="s.value"
@@ -201,6 +207,44 @@
                       </div>
                       <div v-if="customization.skin === s.value" class="w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center text-white text-[9px] font-black">✓</div>
                     </button>
+
+                    <!-- Premium skins from catalog -->
+                    <template v-for="ps in premiumSkinsForSelector" :key="ps.id">
+                      <!-- Owned: selectable -->
+                      <button
+                        v-if="customization.isSkinOwned(ps.id)"
+                        class="flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
+                        :class="customization.skin === ps.id
+                          ? 'bg-amber-500/15 border-amber-500/40 shadow-lg shadow-amber-500/10'
+                          : 'bg-slate-800/60 border-white/8 hover:border-white/20'"
+                        @click="customization.setSkin(ps.id)"
+                      >
+                        <img v-if="ps.images['k-w']" :src="ps.images['k-w']" class="w-10 h-10 object-contain drop-shadow" />
+                        <span v-else class="text-4xl leading-none">♛</span>
+                        <div class="text-center">
+                          <p class="font-bold text-xs leading-tight" :class="customization.skin === ps.id ? 'text-amber-300' : 'text-white'">{{ ps.name }}</p>
+                          <p class="text-[10px] text-amber-600 mt-0.5">{{ ps.tag }}</p>
+                        </div>
+                        <div v-if="customization.skin === ps.id" class="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center text-white text-[9px] font-black">✓</div>
+                      </button>
+
+                      <!-- Not owned: locked -->
+                      <NuxtLink
+                        v-else
+                        to="/shop"
+                        class="flex flex-col items-center gap-3 p-4 rounded-2xl border border-dashed border-white/10 bg-slate-800/40 hover:border-amber-500/30 transition-all duration-200 hover:-translate-y-0.5 relative group"
+                      >
+                        <div class="absolute inset-0 rounded-2xl bg-slate-900/60 flex items-center justify-center">
+                          <div class="flex flex-col items-center gap-1">
+                            <span class="text-2xl">🔒</span>
+                            <span class="text-[10px] text-amber-400 font-bold">🪙 {{ ps.price }}</span>
+                          </div>
+                        </div>
+                        <img v-if="ps.images['k-w']" :src="ps.images['k-w']" class="w-10 h-10 object-contain opacity-20" />
+                        <span v-else class="text-4xl leading-none opacity-20">♛</span>
+                        <p class="font-bold text-xs text-slate-600">{{ ps.name }}</p>
+                      </NuxtLink>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -618,14 +662,18 @@ import { useChessStore, type Difficulty } from '~/stores/chess'
 import { useProfileStore } from '~/stores/profile'
 import { useCustomizationStore, ARENA_THEMES } from '~/stores/customization'
 import { useRaidStore, type RaidTarget } from '~/stores/raid'
+import { SKIN_CATALOG } from '~/data/skins'
+
 import ChessBoard from '~/components/chess/ChessBoard.vue'
 import RaidLobby from '~/components/raid/RaidLobby.vue'
 
-definePageMeta({ name: 'Play', middleware: 'auth' })
+definePageMeta({ name: 'Play' })
 
 const chessStore    = useChessStore()
 const profileStore  = useProfileStore()
 const customization = useCustomizationStore()
+const premiumSkinsForSelector = SKIN_CATALOG
+
 const raidStore     = useRaidStore()
 const user          = useSupabaseUser()
 const historyEl     = ref<HTMLElement | null>(null)
@@ -671,7 +719,7 @@ const hpTextColor = computed(() => {
 const PIECE_VAL: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9 }
 function materialScore(fen: string): number {
   let score = 0
-  for (const ch of fen.split(' ')[0]) {
+  for (const ch of (fen.split(' ')[0] ?? '')) {
     const v = PIECE_VAL[ch.toLowerCase()]
     if (v) score += ch === ch.toUpperCase() ? v : -v
   }
@@ -858,7 +906,7 @@ const opponentLabel = computed(() => {
 const movePairs = computed(() => {
   const pairs: [string, string?][] = []
   for (let i = 0; i < chessStore.moveHistory.length; i += 2) {
-    pairs.push([chessStore.moveHistory[i], chessStore.moveHistory[i + 1]])
+    pairs.push([chessStore.moveHistory[i]!, chessStore.moveHistory[i + 1]])
   }
   return pairs
 })
@@ -943,7 +991,7 @@ watch(
           // Prefer pawn moves and non-captures to play passively; fall back to any random move
           const passive = legal.filter(m => m.piece === 'p' && !m.captured)
           const pool = passive.length > 0 ? passive : legal
-          const pick = pool[Math.floor(Math.random() * pool.length)]
+          const pick = pool[Math.floor(Math.random() * pool.length)]!
           if (!chessStore.isGameOver) {
             await animateAndApplyMove(pick.from, pick.to, pick.promotion ?? 'q')
           }

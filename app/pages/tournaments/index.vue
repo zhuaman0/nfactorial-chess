@@ -297,7 +297,7 @@
 <script setup lang="ts">
 import { useTournamentStore } from '~/stores/tournament'
 
-definePageMeta({ name: 'Tournaments', middleware: 'auth' })
+definePageMeta({ name: 'Tournaments' })
 
 const store = useTournamentStore()
 

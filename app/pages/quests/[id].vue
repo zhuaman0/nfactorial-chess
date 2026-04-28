@@ -254,7 +254,7 @@
 import { useQuestsStore } from '~/stores/quests'
 import type { Quest } from '~/stores/quests'
 
-definePageMeta({ name: 'QuestDetail', middleware: 'auth' })
+definePageMeta({ name: 'QuestDetail' })
 
 const route = useRoute()
 const questsStore = useQuestsStore()
@@ -399,13 +399,13 @@ function getValidMoves(pieceType: string, row: number, col: number): [number, nu
       if (ok(row - 1, col + 1)) moves.push([row - 1, col + 1])
       break
     case 'knight':
-      for (const [dr, dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) {
+      for (const [dr, dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]] as [number,number][]) {
         const r = row + dr, c = col + dc
         if (ok(r, c)) moves.push([r, c])
       }
       break
     case 'bishop':
-      for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]])
+      for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]] as [number,number][])
         for (let i = 1; i < 8; i++) {
           const r = row + dr * i, c = col + dc * i
           if (!ok(r, c)) break
@@ -413,7 +413,7 @@ function getValidMoves(pieceType: string, row: number, col: number): [number, nu
         }
       break
     case 'rook':
-      for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]])
+      for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]] as [number,number][])
         for (let i = 1; i < 8; i++) {
           const r = row + dr * i, c = col + dc * i
           if (!ok(r, c)) break
@@ -421,7 +421,7 @@ function getValidMoves(pieceType: string, row: number, col: number): [number, nu
         }
       break
     case 'queen':
-      for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]])
+      for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] as [number,number][])
         for (let i = 1; i < 8; i++) {
           const r = row + dr * i, c = col + dc * i
           if (!ok(r, c)) break
@@ -429,7 +429,7 @@ function getValidMoves(pieceType: string, row: number, col: number): [number, nu
         }
       break
     case 'king':
-      for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]) {
+      for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] as [number,number][]) {
         const r = row + dr, c = col + dc
         if (ok(r, c)) moves.push([r, c])
       }

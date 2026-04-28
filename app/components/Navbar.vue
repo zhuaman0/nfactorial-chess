@@ -16,12 +16,19 @@
         >
           Play
         </NuxtLink>
-        <NuxtLink 
-          to="/leaderboard" 
+        <NuxtLink
+          to="/leaderboard"
           :class="[route.path === '/leaderboard' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white transition-colors']"
           class="text-sm"
         >
           Leaderboard
+        </NuxtLink>
+        <NuxtLink
+          to="/shop"
+          :class="[route.path === '/shop' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-white transition-colors']"
+          class="text-sm flex items-center gap-1"
+        >
+          🏪 Shop
         </NuxtLink>
       </div>
       

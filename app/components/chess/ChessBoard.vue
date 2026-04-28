@@ -154,7 +154,7 @@ const coordsToSquare = (row: number, col: number) =>
 
 function squareToRowCol(sq: string) {
   const col = sq.charCodeAt(0) - 97
-  const row = 8 - parseInt(sq[1])
+  const row = 8 - parseInt(sq[1] ?? '0')
   return { row, col }
 }
 

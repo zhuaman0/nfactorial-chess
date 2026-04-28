@@ -273,7 +273,7 @@
                         {{ match.player_a ? initials(match.player_a) : '?' }}
                       </div>
                       <div class="min-w-0">
-                        <p class="text-white font-semibold text-sm truncate"
+                        <p class="text-black font-semibold text-sm truncate"
                           :class="match.result === 'a_wins' ? 'text-emerald-300' : match.result === 'b_wins' ? 'text-slate-500 line-through' : ''"
                         >
                           {{ match.player_a?.first_name }} {{ match.player_a?.last_name }}
@@ -293,7 +293,7 @@
                           {{ match.result === 'b_wins' ? '1' : match.result === 'draw' ? '½' : '0' }}
                         </span>
                       </div>
-                      <div v-else class="px-3 py-1.5 rounded-xl bg-slate-700/60 text-slate-500 text-xs font-bold">VS</div>
+                      <div v-else class="px-3 py-1.5 rounded-xl bg-black text-white text-xs font-bold">VS</div>
                       <span v-if="match.result" class="text-[10px] text-slate-500">
                         {{ match.result === 'draw' ? 'Draw' : match.result === 'a_wins' ? match.player_a?.first_name + ' wins' : match.player_b?.first_name + ' wins' }}
                       </span>
@@ -302,7 +302,7 @@
                     <!-- Player B -->
                     <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
                       <div class="min-w-0 text-right">
-                        <p class="text-white font-semibold text-sm truncate"
+                        <p class="text-black font-semibold text-sm truncate"
                           :class="match.result === 'b_wins' ? 'text-emerald-300' : match.result === 'a_wins' ? 'text-slate-500 line-through' : ''"
                         >
                           {{ match.player_b?.first_name }} {{ match.player_b?.last_name }}
@@ -546,7 +546,7 @@
 <script setup lang="ts">
 import { useTournamentStore, type TournamentParticipant } from '~/stores/tournament'
 
-definePageMeta({ name: 'TournamentDetail', middleware: 'auth' })
+definePageMeta({ name: 'TournamentDetail' })
 
 const route = useRoute()
 const store = useTournamentStore()
@@ -581,8 +581,11 @@ const myMatchesList = computed(() => {
 // Parse a DATE string safely at local noon to avoid UTC-shift issues
 function parseLocalDate(s: string): Date {
   if (!s) return new Date()
-  const [y, m, d] = s.split('-').map(Number)
-  return new Date(y, (m ?? 1) - 1, d ?? 1, 12, 0, 0)
+  const parts = s.split('-').map(Number)
+  const y = parts[0] ?? new Date().getFullYear()
+  const m = parts[1] ?? 1
+  const d = parts[2] ?? 1
+  return new Date(y, m - 1, d, 12, 0, 0)
 }
 
 const scheduleByDate = computed(() => {
@@ -632,7 +635,7 @@ function buildPreviewMatches() {
   const preview: any[] = []
   for (let r = 0; r < n - 1; r++) {
     for (let m = 0; m < n / 2; m++) {
-      const a = ids[m], b = ids[n - 1 - m]
+      const a = ids[m]!, b = ids[n - 1 - m]!
       if (a.user_id !== 'BYE' && b.user_id !== 'BYE') {
         preview.push({ id: `preview-${r}-${m}`, round: r + 1, result: null,
           player_a_id: a.user_id, player_b_id: b.user_id,
