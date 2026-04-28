@@ -27,6 +27,12 @@
           }"
           @click="!disabled && handleSquareClick(rowIndex, colIndex)"
         >
+          <!-- Last-move highlight overlay -->
+          <div
+            v-if="isLastMoveSquare(rowIndex, colIndex)"
+            class="absolute inset-0 bg-yellow-400/30 pointer-events-none z-[1]"
+          />
+
           <!-- Coordinates -->
           <span
             v-if="colIndex === 0"
@@ -39,10 +45,29 @@
             :style="{ color: coordColor(rowIndex, colIndex) }"
           >{{ String.fromCharCode(97 + colIndex) }}</span>
 
-          <!-- Piece -->
-          <ChessPiece v-if="square" :type="square.type" :color="square.color" />
+          <!-- Piece (hidden while its floating clone is animating away) -->
+          <ChessPiece
+            v-if="square"
+            :type="square.type"
+            :color="square.color"
+            :class="{ 'opacity-0': isHiddenPiece(rowIndex, colIndex) }"
+          />
         </div>
       </template>
+
+      <!-- Sliding piece (player or AI move animation) -->
+      <Transition name="fade">
+        <div
+          v-if="activePending"
+          class="absolute z-30 pointer-events-none piece-slide"
+          :style="floatingPieceStyle"
+        >
+          <ChessPiece
+            :type="(activePending.type as any)"
+            :color="(activePending.color as any)"
+          />
+        </div>
+      </Transition>
 
       <!-- AI Thinking Overlay -->
       <Transition name="fade">
@@ -66,7 +91,7 @@
             : 'bg-slate-600'"
         ></div>
         <span class="text-slate-300 text-sm font-medium">
-          {{ chessStore.isAIThinking ? 'Opponent thinking…' : chessStore.turn === 'w' ? 'Your turn' : "Opponent's turn" }}
+          {{ chessStore.isAIThinking ? 'Opponent thinking…' : chessStore.pendingPlayerMove ? 'Moving…' : chessStore.pendingAiMove ? 'Opponent moving…' : chessStore.turn === 'w' ? 'Your turn' : "Opponent's turn" }}
         </span>
         <span
           v-if="chessStore.isCheck && !chessStore.isGameOver"
@@ -108,8 +133,6 @@ defineProps({
 })
 
 const emit = defineEmits<{
-  // Fired after a player move succeeds. play.vue uses this to compare
-  // material before/after the AI's reply and trigger HP + advisor.
   'player-move': [payload: { fenBefore: string; fenAfter: string }]
 }>()
 
@@ -129,6 +152,12 @@ const coordColor = (row: number, col: number) =>
 const coordsToSquare = (row: number, col: number) =>
   `${String.fromCharCode(97 + col)}${8 - row}`
 
+function squareToRowCol(sq: string) {
+  const col = sq.charCodeAt(0) - 97
+  const row = 8 - parseInt(sq[1])
+  return { row, col }
+}
+
 const isSelected = (row: number, col: number) =>
   chessStore.selectedSquare === coordsToSquare(row, col)
 
@@ -142,10 +171,63 @@ const isPossibleCapture = (row: number, col: number) => {
   return (chessStore.possibleMoves as any[]).some((m: any) => m.to === sq && m.captured)
 }
 
+const isLastMoveSquare = (row: number, col: number) => {
+  const lm = chessStore.lastMove
+  if (!lm) return false
+  const sq = coordsToSquare(row, col)
+  return sq === lm.from || sq === lm.to
+}
+
+// Active pending move: player takes priority (it fires first), then AI
+const activePending = computed(() => chessStore.pendingPlayerMove || chessStore.pendingAiMove)
+
+// Hide the source piece while its floating clone is sliding
+const isHiddenPiece = (row: number, col: number) => {
+  const pending = activePending.value
+  if (!pending) return false
+  const { row: fromRow, col: fromCol } = squareToRowCol(pending.from)
+  return row === fromRow && col === fromCol
+}
+
+// Floating piece slides from source → target using CSS transitions
+const animatingToTarget = ref(false)
+
+watch(activePending, (pending) => {
+  if (pending) {
+    animatingToTarget.value = false
+    nextTick(() => {
+      requestAnimationFrame(() => { animatingToTarget.value = true })
+    })
+  } else {
+    animatingToTarget.value = false
+  }
+})
+
+const floatingPieceStyle = computed(() => {
+  const pending = activePending.value
+  if (!pending) return {}
+  const { row: fromRow, col: fromCol } = squareToRowCol(pending.from)
+  const { row: toRow, col: toCol } = squareToRowCol(pending.to)
+  const row = animatingToTarget.value ? toRow : fromRow
+  const col = animatingToTarget.value ? toCol : fromCol
+  return {
+    width: '12.5%',
+    height: '12.5%',
+    left: `${col * 12.5}%`,
+    top: `${row * 12.5}%`,
+    transition: animatingToTarget.value
+      ? 'left 0.48s cubic-bezier(0.25,0.46,0.45,0.94), top 0.48s cubic-bezier(0.25,0.46,0.45,0.94)'
+      : 'none',
+  }
+})
+
 const PIECE_VALUES: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }
 const getPieceValue = (type?: string) => (type ? (PIECE_VALUES[type] ?? 0) : 0)
 
-const handleSquareClick = (row: number, col: number) => {
+const handleSquareClick = async (row: number, col: number) => {
+  // Block clicks while any piece is sliding
+  if (activePending.value || chessStore.isAIThinking) return
+
   const square = coordsToSquare(row, col)
 
   if (chessStore.selectedSquare === square) {
@@ -154,23 +236,31 @@ const handleSquareClick = (row: number, col: number) => {
   }
 
   if (chessStore.selectedSquare) {
-    const fenBefore = chessStore.fen
-    const capturedValue = getPieceValue(chessStore.game.get(square as any)?.type)
-    const ok = chessStore.makeMove(chessStore.selectedSquare, square)
+    const from = chessStore.selectedSquare
+    const isValidDest = (chessStore.possibleMoves as any[]).some((m: any) => m.to === square)
 
-    if (ok) {
-      // Instant praise when player captures a valuable piece
-      if (capturedValue >= 9) {
-        advisor.show("BY THE KING! You captured their QUEEN! GLORY! 👑", 'praise', 4000)
-      } else if (capturedValue >= 5) {
-        advisor.show("Excellent! Their Rook is yours, My Lord! ⚔️", 'praise', 3000)
-      } else if (capturedValue >= 3) {
-        advisor.show("Well played! You took their piece! Press on! ⚔️", 'praise', 3000)
+    if (isValidDest) {
+      const fenBefore = chessStore.fen
+      const capturedValue = getPieceValue(chessStore.game.get(square as any)?.type)
+      const piece = chessStore.game.get(from as any)
+
+      // Deselect and start slide animation
+      chessStore.selectSquare(null)
+      if (piece) {
+        chessStore.pendingPlayerMove = { from, to: square, type: piece.type, color: piece.color }
+        await new Promise(resolve => setTimeout(resolve, 500))
+        chessStore.pendingPlayerMove = null
       }
-      emit('player-move', { fenBefore, fenAfter: chessStore.fen })
-    }
 
-    if (!ok) {
+      const ok = chessStore.makeMove(from, square)
+      if (ok) {
+        if (capturedValue >= 9) advisor.show("BY THE KING! You captured their QUEEN! GLORY! 👑", 'praise', 4000)
+        else if (capturedValue >= 5) advisor.show("Excellent! Their Rook is yours, My Lord! ⚔️", 'praise', 3000)
+        else if (capturedValue >= 3) advisor.show("Well played! You took their piece! Press on! ⚔️", 'praise', 3000)
+        emit('player-move', { fenBefore, fenAfter: chessStore.fen })
+      }
+    } else {
+      // Click on a different own piece → reselect it
       const piece = chessStore.game.get(square as any)
       if (piece && piece.color === chessStore.turn) {
         chessStore.selectSquare(square)
@@ -190,4 +280,9 @@ const handleSquareClick = (row: number, col: number) => {
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.piece-slide {
+  will-change: left, top;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+}
 </style>

@@ -3,19 +3,19 @@ import { createClient } from '@supabase/supabase-js'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
-  const body = await readBody(event) as {
-    attackerId: string
-    defenderId: string
-    won: boolean
-    goldStake: number
-  }
+  const raw = await readRawBody(event, 'utf8') || ''
+  let body: { attackerId?: string; defenderId?: string; won?: boolean; goldStake?: number } = {}
+  try { body = JSON.parse(raw) } catch { body = {} }
 
   const { attackerId, defenderId, won, goldStake } = body
   if (!attackerId || !defenderId) {
     throw createError({ statusCode: 400, statusMessage: 'attackerId and defenderId required' })
   }
 
-  const supabase = createClient(process.env.SUPABASE_URL!, config.supabaseServiceKey)
+  const supabase = createClient(
+    (config.public.supabase.url as string).replace(/\/$/, ''),
+    config.supabaseServiceKey as string
+  )
 
   if (won) {
     // Attacker wins: take gold from defender, add to attacker

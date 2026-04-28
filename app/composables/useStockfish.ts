@@ -8,7 +8,7 @@ interface StockfishMove {
 }
 
 const DEPTH_MAP: Record<string, number> = {
-  easy:   2,
+  easy:   1,
   medium: 6,
   hard:   12,
   ai:     18,
@@ -57,20 +57,27 @@ export function useStockfish() {
 
   function getBestMove(
     fen: string,
-    difficulty: 'easy' | 'medium' | 'hard' | 'ai' = 'medium'
+    difficulty: 'easy' | 'medium' | 'hard' | 'ai' | 'train' = 'medium'
   ): Promise<StockfishMove | null> {
     return new Promise((resolve) => {
       if (!worker.value || !isReady.value) {
         resolve(null)
         return
       }
-
-      // Cancel any previous pending
       pendingResolve = resolve as (m: StockfishMove) => void
-
       worker.value.postMessage('stop')
       worker.value.postMessage(`position fen ${fen}`)
       worker.value.postMessage(`go depth ${DEPTH_MAP[difficulty] ?? 6}`)
+    })
+  }
+
+  function getBestMoveAtDepth(fen: string, depth: number): Promise<StockfishMove | null> {
+    return new Promise((resolve) => {
+      if (!worker.value || !isReady.value) { resolve(null); return }
+      pendingResolve = resolve as (m: StockfishMove) => void
+      worker.value.postMessage('stop')
+      worker.value.postMessage(`position fen ${fen}`)
+      worker.value.postMessage(`go depth ${depth}`)
     })
   }
 
@@ -81,5 +88,5 @@ export function useStockfish() {
     isReady.value = false
   }
 
-  return { isReady, init, getBestMove, destroy }
+  return { isReady, init, getBestMove, getBestMoveAtDepth, destroy }
 }

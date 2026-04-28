@@ -100,18 +100,27 @@ export const useRaidStore = defineStore('raid', {
       this.shadowMoveIndex++
     },
 
-    async completeRaid(attackerId: string, won: boolean) {
+    async completeRaid(_attackerId: string, won: boolean) {
       if (!this.activeDefender) return
+      const supabase = useSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const payload = {
+        attackerId: String(user?.id || ''),
+        defenderId: String(this.activeDefender.id || ''),
+        won: Boolean(won),
+        goldStake: Number(this.goldStake),
+      }
+      if (!payload.attackerId || !payload.defenderId) {
+        console.error('[raid] completeRaid called with missing IDs', payload)
+        return
+      }
       try {
-        await $fetch('/api/raid/complete', {
+        const res = await window.fetch('/api/raid/complete', {
           method: 'POST',
-          body: {
-            attackerId,
-            defenderId: this.activeDefender.id,
-            won,
-            goldStake: this.goldStake,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         })
+        if (!res.ok) throw new Error(await res.text())
       } catch (e) {
         console.error('Failed to complete raid:', e)
       }

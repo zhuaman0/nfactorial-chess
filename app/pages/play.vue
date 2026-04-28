@@ -11,21 +11,23 @@
             class="relative overflow-hidden rounded-3xl shadow-2xl transition-all duration-500"
             :class="lobbyTab === 'siege'
               ? 'bg-gradient-to-r from-red-700 via-orange-600 to-amber-500'
-              : 'bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500'"
+              : lobbyTab === 'train'
+                ? 'bg-gradient-to-r from-indigo-700 via-violet-600 to-purple-600'
+                : 'bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500'"
           >
             <div class="absolute inset-0 opacity-10 pointer-events-none" :style="chessBoardBg"></div>
             <div class="absolute -top-10 -right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="relative flex items-center justify-between px-10 py-8">
               <div>
                 <h1 class="text-4xl font-extrabold text-white drop-shadow-lg">
-                  {{ lobbyTab === 'siege' ? '⚔️ Shadow Siege' : 'Play Chess' }}
+                  {{ lobbyTab === 'siege' ? '⚔️ Shadow Siege' : lobbyTab === 'train' ? '🧬 AI Mirror Training' : 'Play Chess' }}
                 </h1>
                 <p class="text-orange-100/80 mt-1">
-                  {{ lobbyTab === 'siege' ? 'Raid players — fight their Shadow AI — steal their gold' : 'Set up your match and enter the arena' }}
+                  {{ lobbyTab === 'siege' ? 'Raid players — fight their Shadow AI — steal their gold' : lobbyTab === 'train' ? 'Your AI learns from every game you play and grows stronger' : 'Set up your match and enter the arena' }}
                 </p>
               </div>
               <span class="text-7xl drop-shadow-2xl select-none hidden sm:block">
-                {{ lobbyTab === 'siege' ? '🏰' : '♟' }}
+                {{ lobbyTab === 'siege' ? '🏰' : lobbyTab === 'train' ? '🧬' : '♟' }}
               </span>
             </div>
           </div>
@@ -41,6 +43,13 @@
             >♟ Practice</button>
             <button
               class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+              :class="lobbyTab === 'train'
+                ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30'
+                : 'text-slate-400 hover:text-white'"
+              @click="lobbyTab = 'train'; loadTrainProfile()"
+            >🧬 Train</button>
+            <button
+              class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
               :class="lobbyTab === 'siege'
                 ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
                 : 'text-slate-400 hover:text-white'"
@@ -50,6 +59,70 @@
 
           <!-- Shadow Siege lobby -->
           <RaidLobby v-if="lobbyTab === 'siege'" @start-raid="onStartRaid" />
+
+          <!-- Train lobby -->
+          <div v-else-if="lobbyTab === 'train'" class="flex flex-col gap-6">
+            <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-violet-500/30 rounded-3xl p-8 shadow-2xl">
+              <div class="absolute -top-8 -right-8 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div class="relative flex flex-col gap-6">
+
+                <!-- Header -->
+                <div class="flex items-center gap-3">
+                  <span class="text-3xl">🧬</span>
+                  <div>
+                    <h2 class="text-xl font-extrabold text-white">Your AI Mirror</h2>
+                    <p class="text-slate-400 text-sm mt-0.5">The AI studies your games and mimics your style — getting stronger as you improve</p>
+                  </div>
+                </div>
+
+                <!-- Stats cards -->
+                <div v-if="trainProfileLoading" class="flex items-center gap-3 text-slate-400 text-sm py-4">
+                  <svg class="animate-spin w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                  Analyzing your game history…
+                </div>
+                <div v-else class="grid grid-cols-3 gap-4">
+                  <div class="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 text-center">
+                    <p class="text-2xl font-black text-violet-300">{{ trainShadowProfile?.estimated_elo ?? 800 }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Mirror ELO</p>
+                  </div>
+                  <div class="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 text-center">
+                    <p class="text-2xl font-black text-violet-300">{{ trainShadowProfile?.games_analyzed ?? 0 }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Games learned</p>
+                  </div>
+                  <div class="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 text-center">
+                    <p class="text-2xl font-black text-violet-300">{{ trainShadowProfile?.opening_moves.length ?? 0 }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Moves memorized</p>
+                  </div>
+                </div>
+
+                <!-- How it works -->
+                <div class="bg-slate-800/60 border border-white/8 rounded-2xl p-5 flex flex-col gap-2">
+                  <p class="text-sm font-bold text-white mb-1">How it works</p>
+                  <div class="flex items-start gap-3 text-sm text-slate-400">
+                    <span class="text-violet-400 mt-0.5 shrink-0">①</span>
+                    <span>The AI opens with your own most-played moves — learn to defend against yourself</span>
+                  </div>
+                  <div class="flex items-start gap-3 text-sm text-slate-400">
+                    <span class="text-violet-400 mt-0.5 shrink-0">②</span>
+                    <span>After the opening, it plays at depth based on your estimated ELO (currently <strong class="text-white">depth {{ trainCurrentDepth }}</strong>)</span>
+                  </div>
+                  <div class="flex items-start gap-3 text-sm text-slate-400">
+                    <span class="text-violet-400 mt-0.5 shrink-0">③</span>
+                    <span>Every game you play is saved — the Mirror gets smarter as your win rate grows</span>
+                  </div>
+                </div>
+
+                <!-- Start button -->
+                <button
+                  class="w-full py-4 rounded-2xl font-extrabold text-lg text-white shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  style="background: linear-gradient(135deg,#7c3aed,#9333ea)"
+                  @click="startTrainGame()"
+                >
+                  {{ trainShadowProfile?.games_analyzed ? 'Start Training' : 'Start Training (no history yet — AI starts easy)' }}
+                </button>
+              </div>
+            </div>
+          </div>
 
           <!-- Practice lobby grid -->
           <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -211,17 +284,40 @@
               <div class="flex items-center gap-3">
                 <span class="text-slate-600 text-xs font-bold uppercase tracking-widest">Arena</span>
                 <span
+                  v-if="isTrainGame"
+                  class="text-xs font-bold px-3 py-1 rounded-full border bg-violet-500/20 text-violet-300 border-violet-500/30"
+                >🧬 Mirror Training</span>
+                <span
+                  v-else-if="isRaidGame"
+                  class="text-xs font-bold px-3 py-1 rounded-full border bg-red-500/20 text-red-300 border-red-500/30"
+                >⚔️ Shadow Siege</span>
+                <span
+                  v-else
                   class="text-xs font-bold px-3 py-1 rounded-full border"
                   :class="MODES.find(m => m.value === selectedMode)?.badgeClass"
                 >{{ MODES.find(m => m.value === selectedMode)?.label }}</span>
               </div>
 
-              <!-- Engine loader -->
-              <div v-if="!sfReady" class="flex items-center gap-1.5 text-orange-400 text-xs font-semibold">
-                <div class="w-3 h-3 border-2 border-orange-400/30 border-t-orange-400 rounded-full animate-spin"></div>
-                Loading…
+              <div class="flex items-center gap-3">
+                <!-- Fullscreen button -->
+                <button
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 text-xs font-semibold transition-all"
+                  title="Fullscreen board"
+                  @click="isFullscreen = true"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                  </svg>
+                  Expand
+                </button>
+
+                <!-- Engine loader -->
+                <div v-if="!sfReady" class="flex items-center gap-1.5 text-orange-400 text-xs font-semibold">
+                  <div class="w-3 h-3 border-2 border-orange-400/30 border-t-orange-400 rounded-full animate-spin"></div>
+                  Loading…
+                </div>
+                <div v-else class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#4ade80]" title="Engine ready" />
               </div>
-              <div v-else class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#4ade80]" title="Engine ready" />
             </div>
 
             <div class="relative grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6 items-start">
@@ -240,15 +336,20 @@
                     class="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ring-1"
                     :class="isRaidGame
                       ? 'bg-gradient-to-br from-red-900 to-orange-950 ring-red-500/30'
-                      : selectedMode === 'ai'
-                        ? 'bg-gradient-to-br from-purple-900 to-indigo-950 ring-purple-500/30'
-                        : 'bg-slate-800 ring-white/10'"
-                  >{{ isRaidGame ? '👤' : selectedMode === 'ai' ? '🧠' : '🤖' }}</div>
+                      : isTrainGame
+                        ? 'bg-gradient-to-br from-violet-900 to-indigo-950 ring-violet-500/30'
+                        : selectedMode === 'ai'
+                          ? 'bg-gradient-to-br from-purple-900 to-indigo-950 ring-purple-500/30'
+                          : 'bg-slate-800 ring-white/10'"
+                  >{{ isRaidGame ? '👤' : isTrainGame ? '🧬' : selectedMode === 'ai' ? '🧠' : '🤖' }}</div>
                   <div class="flex-1">
                     <p class="text-white text-sm font-bold leading-tight">{{ opponentName }}</p>
                     <p class="text-slate-500 text-xs mt-0.5">{{ opponentLabel }}</p>
                     <p v-if="isRaidGame && !raidStore.shadowExhausted" class="text-red-400 text-[10px] mt-0.5 font-semibold">
                       Shadow move {{ raidStore.shadowMoveIndex + 1 }}/{{ raidStore.shadowProfile?.opening_moves.length }}
+                    </p>
+                    <p v-if="isTrainGame && trainShadowProfile && trainShadowMoveIndex < trainShadowProfile.opening_moves.length" class="text-violet-400 text-[10px] mt-0.5 font-semibold">
+                      Mirror move {{ trainShadowMoveIndex + 1 }}/{{ trainShadowProfile.opening_moves.length }}
                     </p>
                   </div>
                   <div v-if="chessStore.isAIThinking" class="flex items-center gap-2 text-orange-400 text-xs font-semibold">
@@ -403,6 +504,112 @@
 
       </Transition>
     </main>
+
+    <!-- ══════════════════════════════════════ FULLSCREEN OVERLAY ══ -->
+    <Transition name="fs-fade">
+      <div
+        v-if="isFullscreen && gameStarted"
+        style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#020617;display:flex;flex-direction:column;"
+      >
+        <!-- Top bar -->
+        <div class="flex items-center justify-between px-6 py-3 border-b border-white/8 shrink-0">
+          <div class="flex items-center gap-3">
+            <span class="text-slate-500 text-xs font-bold uppercase tracking-widest">Arena</span>
+            <span
+              class="text-xs font-bold px-3 py-1 rounded-full border"
+              :class="MODES.find(m => m.value === selectedMode)?.badgeClass"
+            >{{ MODES.find(m => m.value === selectedMode)?.label }}</span>
+          </div>
+          <button
+            class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 text-sm transition-all"
+            @click="isFullscreen = false"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+            </svg>
+            Exit Fullscreen
+          </button>
+        </div>
+
+        <!-- Main content -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px;height:100%;width:100%;max-width:720px;">
+
+            <!-- Opponent row -->
+            <div
+              class="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all duration-300 shrink-0"
+              :class="chessStore.turn === 'b' && !chessStore.isGameOver
+                ? 'bg-orange-500/10 border-orange-500/40'
+                : 'bg-white/4 border-white/8'"
+            >
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
+                :class="isRaidGame ? 'bg-gradient-to-br from-red-900 to-orange-950' : isTrainGame ? 'bg-gradient-to-br from-violet-900 to-indigo-950' : 'bg-gradient-to-br from-purple-900 to-indigo-950'"
+              >{{ isRaidGame ? '👤' : isTrainGame ? '🧬' : selectedMode === 'ai' ? '🧠' : '🤖' }}</div>
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-bold truncate">{{ opponentName }}</p>
+                <p class="text-slate-500 text-xs">{{ opponentLabel }}</p>
+              </div>
+              <div v-if="chessStore.isAIThinking" class="flex items-center gap-2 text-orange-400 text-xs font-semibold shrink-0">
+                <span class="flex gap-0.5">
+                  <span class="w-1 h-3 bg-orange-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+                  <span class="w-1 h-3 bg-orange-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+                  <span class="w-1 h-3 bg-orange-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+                </span>
+                Thinking
+              </div>
+              <div v-else-if="chessStore.turn === 'b' && !chessStore.isGameOver"
+                class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#4ade80] animate-pulse shrink-0" />
+            </div>
+
+            <!-- Castle HP -->
+            <div class="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white/4 border border-white/8 shrink-0">
+              <span class="text-xl select-none">🏰</span>
+              <div class="flex-1">
+                <div class="flex justify-between items-center mb-1.5">
+                  <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Castle HP</span>
+                  <span class="text-xs font-black tabular-nums" :class="hpTextColor">{{ chessStore.castleHp }}<span class="text-slate-600 font-normal"> / 100</span></span>
+                </div>
+                <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden ring-1 ring-white/5">
+                  <div
+                    class="h-full rounded-full transition-all duration-700 ease-out"
+                    :class="hpBarColor"
+                    :style="{ width: `${chessStore.castleHp}%` }"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Board: fills the remaining space -->
+            <div style="flex:1;width:100%;min-height:0;display:flex;align-items:center;justify-content:center;">
+              <ChessBoard
+                :disabled="chessStore.turn === 'b' || chessStore.isAIThinking || chessStore.isGameOver || !sfReady"
+                @player-move="onPlayerMove"
+              />
+            </div>
+
+            <!-- Player row -->
+            <div
+              class="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all duration-300 shrink-0"
+              :class="chessStore.turn === 'w' && !chessStore.isGameOver && !chessStore.isAIThinking
+                ? 'bg-orange-500/10 border-orange-500/40'
+                : 'bg-white/4 border-white/8'"
+            >
+              <div class="relative shrink-0">
+                <UiAvatar :src="avatarSrc" :fallback="profileStore.initials || '?'" size="sm" />
+                <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-white border-2 border-slate-900 shadow" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-bold truncate">{{ profileStore.fullName || user?.email || 'You' }}</p>
+                <p class="text-slate-500 text-xs">White · Playing as you</p>
+              </div>
+              <div v-if="chessStore.turn === 'w' && !chessStore.isGameOver && !chessStore.isAIThinking"
+                class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#4ade80] animate-pulse shrink-0" />
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -424,12 +631,28 @@ const user          = useSupabaseUser()
 const historyEl     = ref<HTMLElement | null>(null)
 const advisor       = useAdvisor()
 
-const { isReady: sfReady, init: sfInit, getBestMove, destroy: sfDestroy } = useStockfish()
+const { isReady: sfReady, init: sfInit, getBestMove, getBestMoveAtDepth, destroy: sfDestroy } = useStockfish()
 
 const gameStarted  = ref(false)
 const selectedMode = ref<Difficulty>('medium')
-const lobbyTab     = ref<'practice' | 'siege'>('practice')
+const lobbyTab     = ref<'practice' | 'train' | 'siege'>('practice')
 const isRaidGame   = ref(false)
+const isTrainGame  = ref(false)
+
+interface TrainShadowProfile { opening_moves: string[]; estimated_elo: number; games_analyzed: number }
+const trainShadowProfile    = ref<TrainShadowProfile | null>(null)
+const trainShadowMoveIndex  = ref(0)
+const trainProfileLoading   = ref(false)
+const isFullscreen = ref(false)
+
+watch(isFullscreen, (val) => {
+  if (import.meta.client) {
+    document.body.style.overflow = val ? 'hidden' : ''
+  }
+})
+onUnmounted(() => {
+  if (import.meta.client) document.body.style.overflow = ''
+})
 
 // ── Castle HP bar colours ──────────────────────────────────────────────────
 const hpBarColor = computed(() => {
@@ -538,8 +761,50 @@ const avatarSrc = computed(() => {
   return profileStore.avatarUrl || meta.picture || meta.avatar_url || ''
 })
 
+function eloToDepth(elo: number): number {
+  if (elo < 900)  return 1
+  if (elo < 1100) return 2
+  if (elo < 1300) return 3
+  if (elo < 1500) return 5
+  if (elo < 1700) return 8
+  return 12
+}
+
+const trainCurrentDepth = computed(() =>
+  eloToDepth(trainShadowProfile.value?.estimated_elo ?? 800)
+)
+
+async function loadTrainProfile() {
+  const supabase = useSupabaseClient()
+  const { data: { user: u } } = await supabase.auth.getUser()
+  if (!u) return
+  trainProfileLoading.value = true
+  try {
+    const data = await $fetch<TrainShadowProfile>(`/api/shadow/${u.id}`)
+    trainShadowProfile.value = data
+  } catch {
+    trainShadowProfile.value = { opening_moves: [], estimated_elo: 800, games_analyzed: 0 }
+  } finally {
+    trainProfileLoading.value = false
+  }
+}
+
+async function startTrainGame() {
+  isRaidGame.value = false
+  isTrainGame.value = true
+  trainShadowMoveIndex.value = 0
+  if (!trainShadowProfile.value) await loadTrainProfile()
+  chessStore.setDifficulty('train')
+  chessStore.resetGame()
+  gameStarted.value = true
+  sfInit()
+  const elo = trainShadowProfile.value?.estimated_elo ?? 800
+  advisor.show(`Mirror ELO ${elo} — The AI has studied your games. Fight yourself! 🧬`, 'neutral', 4000)
+}
+
 function startGame() {
   isRaidGame.value = false
+  isTrainGame.value = false
   chessStore.setDifficulty(selectedMode.value)
   chessStore.resetGame()
   gameStarted.value = true
@@ -563,6 +828,9 @@ function backToLobby() {
   chessStore.resetGame()
   gameStarted.value = false
   isRaidGame.value = false
+  isTrainGame.value = false
+  isFullscreen.value = false
+  trainShadowMoveIndex.value = 0
   raidStore.clearRaid()
   advisor.hide()
 }
@@ -572,11 +840,15 @@ const opponentName = computed(() => {
     const d = raidStore.activeDefender
     return `Shadow of ${d.first_name} ${d.last_name}`.trim()
   }
+  if (isTrainGame.value) return 'Your AI Mirror'
   return selectedMode.value === 'ai' ? 'Grandmaster AI' : 'Stockfish Bot'
 })
 const opponentLabel = computed(() => {
   if (isRaidGame.value && raidStore.shadowProfile) {
     return `Est. ${raidStore.shadowProfile.estimated_elo} ELO · ${raidStore.shadowProfile.games_analyzed} games learned`
+  }
+  if (isTrainGame.value && trainShadowProfile.value) {
+    return `Mirror ELO ${trainShadowProfile.value.estimated_elo} · Depth ${trainCurrentDepth.value} · ${trainShadowProfile.value.games_analyzed} games`
   }
   if (selectedMode.value === 'ai') return 'Max Depth · Depth 18'
   const map: Record<string, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
@@ -596,6 +868,20 @@ watch(() => chessStore.moveHistory.length, async () => {
   if (historyEl.value) historyEl.value.scrollTop = historyEl.value.scrollHeight
 })
 
+async function animateAndApplyMove(from: string, to: string, promotion: string) {
+  // Clear the thinking overlay, then animate the piece sliding
+  chessStore.isAIThinking = false
+  const piece = chessStore.game.get(from as any)
+  if (piece) {
+    chessStore.pendingAiMove = { from, to, type: piece.type, color: piece.color }
+    await new Promise(resolve => setTimeout(resolve, 520))
+    chessStore.pendingAiMove = null
+  }
+  if (!chessStore.isGameOver) {
+    chessStore.makeMove(from, to, promotion)
+  }
+}
+
 watch(
   () => [chessStore.turn, chessStore.isGameOver, sfReady.value, gameStarted.value] as const,
   async ([turn, gameOver, ready, started]) => {
@@ -611,7 +897,7 @@ watch(
           try {
             const m = game.move(shadowSan)
             if (m && !chessStore.isGameOver) {
-              chessStore.makeMove(m.from, m.to, m.promotion ?? 'q')
+              await animateAndApplyMove(m.from, m.to, m.promotion ?? 'q')
               raidStore.advanceShadowMove()
               return
             }
@@ -620,10 +906,54 @@ watch(
           }
         }
       }
-      // Fallback: Stockfish at the defender's estimated difficulty
+
+      // Train mode: play user's own opening moves, then adaptive-depth Stockfish
+      if (isTrainGame.value) {
+        const profile = trainShadowProfile.value
+        if (profile && trainShadowMoveIndex.value < profile.opening_moves.length) {
+          const san = profile.opening_moves[trainShadowMoveIndex.value]
+          if (san) {
+            const { Chess } = await import('chess.js')
+            const game = new Chess(chessStore.fen)
+            try {
+              const m = game.move(san)
+              if (m && !chessStore.isGameOver) {
+                await animateAndApplyMove(m.from, m.to, m.promotion ?? 'q')
+                trainShadowMoveIndex.value++
+                return
+              }
+            } catch { /* fall through */ }
+          }
+        }
+        // Opening exhausted — use Stockfish at ELO-based depth
+        const depth = eloToDepth(profile?.estimated_elo ?? 800)
+        const move = await getBestMoveAtDepth(chessStore.fen, depth)
+        if (move && !chessStore.isGameOver) {
+          await animateAndApplyMove(move.from, move.to, move.promotion ?? 'q')
+        }
+        return
+      }
+
+      // Easy mode: always plays a weak move so beginners can train
+      if (chessStore.difficulty === 'easy') {
+        const { Chess } = await import('chess.js')
+        const g = new Chess(chessStore.fen)
+        const legal = g.moves({ verbose: true })
+        if (legal.length > 0) {
+          // Prefer pawn moves and non-captures to play passively; fall back to any random move
+          const passive = legal.filter(m => m.piece === 'p' && !m.captured)
+          const pool = passive.length > 0 ? passive : legal
+          const pick = pool[Math.floor(Math.random() * pool.length)]
+          if (!chessStore.isGameOver) {
+            await animateAndApplyMove(pick.from, pick.to, pick.promotion ?? 'q')
+          }
+          return
+        }
+      }
+      // All other difficulties: Stockfish at the configured depth
       const move = await getBestMove(chessStore.fen, chessStore.difficulty)
       if (move && !chessStore.isGameOver) {
-        chessStore.makeMove(move.from, move.to, move.promotion ?? 'q')
+        await animateAndApplyMove(move.from, move.to, move.promotion ?? 'q')
       }
     } finally {
       chessStore.isAIThinking = false
@@ -693,6 +1023,9 @@ onUnmounted(() => { sfDestroy() })
 
 .slide-up-enter-active { transition: all 0.3s ease; }
 .slide-up-enter-from   { opacity: 0; transform: translateY(12px); }
+
+.fs-fade-enter-active, .fs-fade-leave-active { transition: opacity 0.2s ease; }
+.fs-fade-enter-from, .fs-fade-leave-to { opacity: 0; }
 
 .preview-neon-b {
   filter: sepia(1) saturate(8) hue-rotate(260deg) brightness(1.3)
