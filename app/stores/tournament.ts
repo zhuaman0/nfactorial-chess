@@ -11,6 +11,7 @@ export interface Tournament {
   status: 'upcoming' | 'active' | 'finished'
   created_by: string
   created_at: string
+  location: string
   participant_count?: number
 }
 
@@ -164,6 +165,7 @@ export const useTournamentStore = defineStore('tournament', {
       maxPlayers: number
       startDate: string
       endDate: string
+      location: string
     }): Promise<Tournament | null> {
       const supabase = useSupabaseClient()
       const myId = await getCurrentUserId()
@@ -182,6 +184,7 @@ export const useTournamentStore = defineStore('tournament', {
             max_players: payload.maxPlayers,
             start_date: payload.startDate,
             end_date: payload.endDate,
+            location: payload.location,
             status: 'upcoming',
             created_by: myId,
           } as never)

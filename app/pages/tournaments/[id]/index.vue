@@ -28,6 +28,9 @@
                   </span>
                 </div>
                 <div class="flex flex-wrap gap-4 mt-2 text-slate-400 text-sm">
+                  <span v-if="store.activeTournament.location" class="text-orange-400 font-semibold flex items-center gap-1">
+                    📍 {{ store.activeTournament.location }}
+                  </span>
                   <span>📅 {{ formatDate(store.activeTournament.start_date) }} → {{ formatDate(store.activeTournament.end_date) }}</span>
                   <span>👥 {{ store.participants.length }}/{{ store.activeTournament.max_players }} players</span>
                 </div>

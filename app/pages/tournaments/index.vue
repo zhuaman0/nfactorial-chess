@@ -20,22 +20,22 @@
                 </div>
               </div>
               <div>
-                <h1 class="text-4xl font-extrabold text-white tracking-tight">Tournaments</h1>
-                <p class="text-slate-400 mt-1">Create a league. Invite your rivals. Dominate the board.</p>
+                <h1 class="text-4xl font-extrabold text-white tracking-tight">Live Tournaments</h1>
+                <p class="text-slate-400 mt-1">Organize a real chess event. Pick a venue, invite players, show up and play.</p>
               </div>
             </div>
             <div class="flex flex-wrap gap-3 mt-6">
               <div class="flex items-center gap-2 px-4 py-2 bg-slate-800/80 border border-orange-500/20 rounded-xl">
-                <span class="text-lg">⚔️</span>
-                <span class="text-slate-300 text-sm font-medium">Round-robin format</span>
+                <span class="text-lg">📍</span>
+                <span class="text-slate-300 text-sm font-medium">Real venue location</span>
               </div>
               <div class="flex items-center gap-2 px-4 py-2 bg-slate-800/80 border border-orange-500/20 rounded-xl">
                 <span class="text-lg">👥</span>
                 <span class="text-slate-300 text-sm font-medium">Up to 10 players</span>
               </div>
               <div class="flex items-center gap-2 px-4 py-2 bg-slate-800/80 border border-orange-500/20 rounded-xl">
-                <span class="text-lg">📅</span>
-                <span class="text-slate-300 text-sm font-medium">Custom duration</span>
+                <span class="text-lg">🤝</span>
+                <span class="text-slate-300 text-sm font-medium">Meet in person</span>
               </div>
             </div>
           </div>
@@ -47,7 +47,7 @@
               @click="showCreate = true"
               class="px-8 py-3.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold rounded-2xl shadow-[0_0_20px_rgba(249,115,22,0.4)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] flex items-center gap-2"
             >
-              <span class="text-xl">+</span> Create Tournament
+              <span class="text-xl">+</span> Create Event
             </button>
             <button
               id="btn-join-tournament"
@@ -84,14 +84,14 @@
       <div v-else>
         <!-- Empty state -->
         <div v-if="store.myTournaments.length === 0" class="bg-slate-800/50 border border-white/10 rounded-3xl p-16 flex flex-col items-center text-center gap-5">
-          <div class="w-20 h-20 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-4xl">🏆</div>
+          <div class="w-20 h-20 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-4xl">📍</div>
           <div>
-            <h2 class="text-white font-bold text-xl mb-2">No tournaments yet</h2>
-            <p class="text-slate-500 text-sm max-w-sm">Create your own league or join one with an invite code. Compete in a football-style round-robin and prove who's the best!</p>
+            <h2 class="text-white font-bold text-xl mb-2">No events yet</h2>
+            <p class="text-slate-500 text-sm max-w-sm">Organize a chess meetup at a café, club, or park. Set the location, share the code, and players will come to you!</p>
           </div>
           <div class="flex gap-3 mt-2">
             <button @click="showCreate = true" class="px-6 py-2.5 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl transition-colors">
-              Create First Tournament
+              Create Event
             </button>
             <button @click="showJoin = true" class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 border border-white/10 text-white font-bold rounded-xl transition-colors">
               Join by Code
@@ -111,7 +111,7 @@
             <div v-if="t.status === 'active'" class="absolute -top-10 -right-10 w-40 h-40 bg-orange-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
             <!-- Header -->
-            <div class="flex items-start justify-between mb-4">
+            <div class="flex items-start justify-between mb-3">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-lg flex-shrink-0">
                   🏆
@@ -126,14 +126,20 @@
               </span>
             </div>
 
+            <!-- Location -->
+            <div v-if="t.location" class="flex items-center gap-2 mb-3 text-orange-400 text-sm font-semibold">
+              <span>📍</span>
+              <span class="truncate">{{ t.location }}</span>
+            </div>
+
             <!-- Dates -->
             <div class="flex gap-3 mb-4">
               <div class="flex-1 bg-slate-900/50 rounded-xl p-3 text-center">
-                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Start</p>
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Date</p>
                 <p class="text-slate-200 text-sm font-semibold">{{ formatDate(t.start_date) }}</p>
               </div>
               <div class="flex-1 bg-slate-900/50 rounded-xl p-3 text-center">
-                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">End</p>
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Until</p>
                 <p class="text-slate-200 text-sm font-semibold">{{ formatDate(t.end_date) }}</p>
               </div>
             </div>
@@ -176,17 +182,27 @@
           <div class="relative bg-slate-900 border border-orange-500/30 rounded-3xl p-8 w-full max-w-md shadow-2xl shadow-orange-500/10">
             <div class="absolute -top-10 -right-10 w-40 h-40 bg-orange-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-            <h2 class="text-white font-extrabold text-2xl mb-1 flex items-center gap-2">🏆 Create Tournament</h2>
-            <p class="text-slate-500 text-sm mb-7">Set up your league. Share the invite code with friends.</p>
+            <h2 class="text-white font-extrabold text-2xl mb-1 flex items-center gap-2">📍 Create Event</h2>
+            <p class="text-slate-500 text-sm mb-7">Set the venue and date. Share the invite code so players can show up.</p>
 
             <div class="flex flex-col gap-5">
               <div>
-                <label class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 block">Tournament Name</label>
+                <label class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 block">Event Name</label>
                 <input
                   v-model="form.name"
                   id="input-tournament-name"
                   type="text"
-                  placeholder="e.g. Spring Cup 2026"
+                  placeholder="e.g. Almaty Spring Cup 2026"
+                  class="w-full bg-slate-800 border border-white/10 focus:border-orange-500/60 rounded-xl px-4 py-3 text-white placeholder-slate-600 outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 block">📍 Venue / Location</label>
+                <input
+                  v-model="form.location"
+                  id="input-location"
+                  type="text"
+                  placeholder="e.g. Almaty Chess Club, Dostyk Ave 12"
                   class="w-full bg-slate-800 border border-white/10 focus:border-orange-500/60 rounded-xl px-4 py-3 text-white placeholder-slate-600 outline-none transition-colors"
                 />
               </div>
@@ -203,7 +219,7 @@
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 block">Start Date</label>
+                  <label class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 block">Event Date</label>
                   <input
                     v-model="form.startDate"
                     id="input-start-date"
@@ -233,10 +249,10 @@
               <button
                 id="btn-confirm-create"
                 @click="handleCreate"
-                :disabled="store.actionLoading || !form.name || !form.startDate || !form.endDate"
+                :disabled="store.actionLoading || !form.name || !form.location || !form.startDate || !form.endDate"
                 class="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all hover:scale-105 shadow-[0_0_15px_rgba(249,115,22,0.3)]"
               >
-                {{ store.actionLoading ? 'Creating…' : 'Create 🏆' }}
+                {{ store.actionLoading ? 'Creating…' : 'Create Event 📍' }}
               </button>
             </div>
           </div>
@@ -250,8 +266,8 @@
         <div v-if="showJoin" class="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="showJoin = false"></div>
           <div class="relative bg-slate-900 border border-orange-500/30 rounded-3xl p-8 w-full max-w-sm shadow-2xl">
-            <h2 class="text-white font-extrabold text-2xl mb-1 flex items-center gap-2">🔗 Join Tournament</h2>
-            <p class="text-slate-500 text-sm mb-7">Enter the 6-character invite code you received.</p>
+            <h2 class="text-white font-extrabold text-2xl mb-1 flex items-center gap-2">🔗 Join Event</h2>
+            <p class="text-slate-500 text-sm mb-7">Got an invite code from the organizer? Enter it and then head to the venue!</p>
 
             <input
               v-model="joinCode"
@@ -311,6 +327,7 @@ const joinCode   = ref('')
 // ── Create form ──
 const form = reactive({
   name: '',
+  location: '',
   maxPlayers: 10,
   startDate: '',
   endDate: '',
@@ -319,6 +336,7 @@ const form = reactive({
 async function handleCreate() {
   const result = await store.createTournament({
     name: form.name,
+    location: form.location,
     maxPlayers: form.maxPlayers,
     startDate: form.startDate,
     endDate: form.endDate,
@@ -326,6 +344,7 @@ async function handleCreate() {
   if (result) {
     showCreate.value = false
     form.name = ''
+    form.location = ''
     form.startDate = ''
     form.endDate = ''
     navigateTo(`/tournaments/${result.id}`)
