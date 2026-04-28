@@ -1,3 +1,5 @@
+I ask in please that login by register way.My google sign in not working in one situations)
+
 # 🏰 Epic Chess Adventures: The Ultimate Battle! ♟️
 
 Welcome to the most awesome chess game ever! This isn't just regular chess—it's a magical world where you can complete quests, train your own robot, and battle friends to become the ultimate Grandmaster! 
