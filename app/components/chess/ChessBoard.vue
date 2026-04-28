@@ -57,35 +57,39 @@
     </div>
 
     <!-- Status Bar -->
-    <div class="mt-4 w-full max-w-[600px] bg-slate-800/70 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg flex justify-between items-center">
-      <div class="flex items-center gap-3">
+    <div class="mt-3 w-full max-w-[600px] flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-900 border border-white/10">
+      <div class="flex items-center gap-2.5">
         <div
-          class="w-3.5 h-3.5 rounded-full ring-2 ring-white/20"
-          :class="chessStore.turn === 'w' ? 'bg-white shadow-[0_0_8px_white]' : 'bg-slate-900 shadow-[0_0_8px_#000]'"
+          class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+          :class="chessStore.turn === 'w'
+            ? 'bg-white shadow-[0_0_6px_rgba(255,255,255,0.8)]'
+            : 'bg-slate-600'"
         ></div>
-        <span class="text-white text-sm font-medium">
+        <span class="text-slate-300 text-sm font-medium">
           {{ chessStore.isAIThinking ? 'Opponent thinking…' : chessStore.turn === 'w' ? 'Your turn' : "Opponent's turn" }}
         </span>
-        <span v-if="chessStore.isCheck && !chessStore.isGameOver" class="text-red-400 text-xs font-bold uppercase tracking-wider">Check!</span>
+        <span
+          v-if="chessStore.isCheck && !chessStore.isGameOver"
+          class="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] font-extrabold uppercase tracking-wider"
+        >⚠ Check!</span>
       </div>
-
       <div class="flex gap-1">
         <button
           :disabled="disabled || chessStore.moveHistory.length < 2"
-          class="p-2 rounded-lg transition-colors text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10"
+          class="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
           title="Take Back"
           @click="chessStore.undoMove()"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
           </svg>
         </button>
         <button
-          class="p-2 rounded-lg hover:bg-white/10 transition-colors text-slate-300"
+          class="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all"
           title="New Game"
           @click="chessStore.resetGame()"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
           </svg>
         </button>
