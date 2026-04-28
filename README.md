@@ -29,4 +29,40 @@ Got a lot of gold from winning battles? Spend it here! Buy super cool, colorful 
 Read all about it! Check this page for cool updates, new events, and secret tips on how to play better.
 
 ## 👑 The Royal Pass (Upgrade)
-Want the ultimate VIP experience? Get the premium upgrade to unlock super special features! (Parents: All upgrades are safely and securely handled by Stripe).
+Want the ultimate VIP experience? Get the **Royal Pass** for a one-time payment of **$9.99** and unlock exclusive perks forever:
+
+* ❤️ **Unlimited HP** in Survival Mode — never run out of lives
+* 🧠 **Advanced AI Coach** — deep move analysis and strategic coaching
+* 🖤 **Obsidian Board Skin** — exclusive dark-fantasy pieces unavailable to free players
+* 👑 **Royal Pass badge** — gold crown on your profile and leaderboard
+
+Payment is handled securely by **Stripe** — one-time charge, no subscription, lifetime access.
+
+---
+
+## 📚 Detailed Feature Documentation
+
+| Section | File | Description |
+|---------|------|-------------|
+| 🔐 Authentication | [docs/AUTH.md](docs/AUTH.md) | Sign up, login, Google OAuth, profile creation |
+| ♟️ Play Chess | [docs/PLAY.md](docs/PLAY.md) | Practice vs AI, training mode, Shadow Siege |
+| 📜 Quests | [docs/QUESTS.md](docs/QUESTS.md) | Earn XP through quiz and piece-training quests |
+| 🏰 Shadow Siege | [docs/RAIDS.md](docs/RAIDS.md) | Bet gold, raid other players, steal their gold |
+| 🛍️ Shop | [docs/SHOP.md](docs/SHOP.md) | Gold economy, board themes, premium skins |
+| 🏆 Leaderboard | [docs/LEADERBOARD.md](docs/LEADERBOARD.md) | Global rankings by wins and win rate |
+| 📍 Tournaments | [docs/TOURNAMENTS.md](docs/TOURNAMENTS.md) | Real-life chess events with venue + invite codes |
+| 👑 Royal Pass | [docs/PRO.md](docs/PRO.md) | One-time $9.99 upgrade via Stripe — Pro features and badge |
+
+---
+
+## 🛠️ For Developers
+
+**Live demo →** https://royalchess-khaki.vercel.app
+
+**Tech stack:** Nuxt 4 · Vue 3 · Supabase · Stockfish 18 · Tailwind CSS · Stripe · Vercel
+
+```bash
+npm install && npm run dev   # → http://localhost:3000
+```
+
+Required `.env` variables: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
