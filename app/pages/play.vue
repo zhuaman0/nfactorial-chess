@@ -723,6 +723,12 @@ function materialScore(fen: string): number {
   return score
 }
 
+const trainSteps = [
+  'The AI opens with your own most-played moves — learn to defend against yourself.',
+  `Plays at depth matched to your estimated ELO (currently <strong class="text-slate-700">depth ${trainCurrentDepth}</strong>).`,
+  'Every game you play is saved — the Mirror gets smarter as you improve.',
+]
+
 // Snapshot material right after player moves, before AI replies.
 let materialSnapshot = 0
 function onPlayerMove(_payload: { fenBefore: string; fenAfter: string }) {
@@ -818,12 +824,6 @@ function eloToDepth(elo: number): number {
 const trainCurrentDepth = computed(() =>
   eloToDepth(trainShadowProfile.value?.estimated_elo ?? 800)
 )
-
-const trainSteps = computed(() => [
-  'The AI opens with your own most-played moves — learn to defend against yourself.',
-  `Plays at depth matched to your estimated ELO (currently <strong class="text-slate-700">depth ${trainCurrentDepth.value}</strong>).`,
-  'Every game you play is saved — the Mirror gets smarter as you improve.',
-])
 
 async function loadTrainProfile() {
   const supabase = useSupabaseClient()
