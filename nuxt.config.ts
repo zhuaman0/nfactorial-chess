@@ -19,6 +19,7 @@ export default defineNuxtConfig({
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? '',
     },
   },
+  ssr: false,
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: [
