@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { Chess, type Square, type Move } from 'chess.js'
 
-export type Difficulty = 'easy' | 'medium' | 'hard' | 'ai'
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'ai' | 'train'
 
 export const useChessStore = defineStore('chess', {
   state: () => ({
@@ -11,6 +11,9 @@ export const useChessStore = defineStore('chess', {
     isAIThinking: false,
     difficulty: 'medium' as Difficulty,
     castleHp: 100,
+    lastMove: null as { from: string; to: string } | null,
+    pendingAiMove: null as { from: string; to: string; type: string; color: string } | null,
+    pendingPlayerMove: null as { from: string; to: string; type: string; color: string } | null,
   }),
 
   getters: {
@@ -62,6 +65,7 @@ export const useChessStore = defineStore('chess', {
           this.fen = game.fen()
           this.moveHistory.push(move.san)
           this.selectedSquare = null
+          this.lastMove = { from, to }
           return true
         }
         return false
@@ -92,6 +96,9 @@ export const useChessStore = defineStore('chess', {
       this.selectedSquare = null
       this.isAIThinking = false
       this.castleHp = 100
+      this.lastMove = null
+      this.pendingAiMove = null
+      this.pendingPlayerMove = null
     },
 
     setDifficulty(d: Difficulty) {
@@ -99,31 +106,36 @@ export const useChessStore = defineStore('chess', {
     },
 
     async saveGame(): Promise<boolean> {
-      const supabase = useSupabaseClient()
       const user = useSupabaseUser()
-      if (!user.value || this.moveHistory.length === 0) return false
+      // Snapshot plain values from reactive Pinia state immediately
+      const moves = Array.from(this.moveHistory as string[])
+      const fen   = String(this.fen)
+      const userId = String(user.value?.id || '')
+
+      if (!userId || moves.length === 0) return false
+
+      let winner = 'Draw'
+      let result = '1/2-1/2'
+      if (this.isCheckmate) {
+        winner = this.turn === 'w' ? 'Stockfish' : 'You'
+        result = this.turn === 'w' ? '0-1' : '1-0'
+      }
 
       try {
-        let winner = 'Draw'
-        let result = '1/2-1/2'
-        if (this.isCheckmate) {
-          winner = this.turn === 'w' ? 'Stockfish' : 'You'
-          result = this.turn === 'w' ? '0-1' : '1-0'
-        }
-
-        const { error } = await supabase
-          .from('games')
-          .insert({
-            user_id: user.value.id,
-            white_name: 'You',
-            black_name: this.difficulty === 'ai' ? 'Grandmaster AI' : `Stockfish (${this.difficulty})`,
+        const res = await window.fetch('/api/games/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            whiteName: 'You',
+            blackName: this.difficulty === 'ai' ? 'Grandmaster AI' : `Stockfish (${this.difficulty})`,
             winner,
             result,
-            moves: this.moveHistory,
-            fen: this.fen,
-          } as never)
-
-        if (error) throw error
+            moves,
+            fen,
+          }),
+        })
+        if (!res.ok) throw new Error(await res.text())
         return true
       } catch (e) {
         console.error('Failed to save game:', e)
