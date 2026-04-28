@@ -10,6 +10,9 @@ export interface Profile {
   gold_balance: number
   defense_wins: number
   raid_wins: number
+  current_streak: number
+  longest_streak: number
+  last_active_at: string | null
   created_at: string
   updated_at: string
 }
@@ -125,6 +128,18 @@ export const useProfileStore = defineStore('profile', {
         return false
       } finally {
         this.loading = false
+      }
+    },
+
+    async checkin(): Promise<void> {
+      try {
+        const res = await $fetch<{ current_streak: number; longest_streak: number }>('/api/streak/checkin', { method: 'POST' })
+        if (this.profile) {
+          this.profile.current_streak = res.current_streak
+          this.profile.longest_streak = res.longest_streak
+        }
+      } catch {
+        // silently ignore — streak is non-critical
       }
     },
 

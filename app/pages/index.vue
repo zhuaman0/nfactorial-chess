@@ -30,5 +30,6 @@ const isMounted = ref(false)
 onMounted(async () => {
   await profileStore.fetchProfile()
   isMounted.value = true
+  profileStore.checkin()
 })
 </script>

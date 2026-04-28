@@ -37,7 +37,7 @@
           <h2 class="text-3xl font-extrabold text-white">Daily Strike</h2>
         </div>
         <p class="text-slate-300 text-lg leading-relaxed mb-6">
-          Just like the best players in the world train every single day — your <span class="text-orange-400 font-semibold">Strike</span> tracks how many days in a row you've played. Miss a day and it resets. Build your fire, climb higher.
+          Just like the best players in the world train every single day — your <span class="text-orange-400 font-semibold">Strike</span> tracks how many days in a row you've visited. Miss a day and it resets. Build your fire, climb higher.
         </p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-slate-800/80 border border-orange-500/20 rounded-2xl p-4 text-center">
@@ -59,23 +59,35 @@
 </template>
 
 <script setup lang="ts">
+import { useProfileStore } from '~/stores/profile'
+
+const profileStore = useProfileStore()
+
+const currentStreak = computed(() => profileStore.profile?.current_streak ?? 0)
+const longestStreak = computed(() => profileStore.profile?.longest_streak ?? 0)
+const streakBonus   = computed(() => Math.min(currentStreak.value * 5, 50))
+
+// Build a 7-day row: today = rightmost dot, mark the last N days as done
+const streakDays = computed(() => {
+  const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+  const todayDow = new Date().getDay() // 0 Sun … 6 Sat
+  // Reorder labels so today is at the end
+  const ordered = [...labels.slice(1), labels[0]!] // Mon→Sun
+  const todayIdx = todayDow === 0 ? 6 : todayDow - 1 // 0=Mon…6=Sun
+
+  return ordered.map((label, i) => {
+    // How many days ago is this slot relative to today?
+    const daysAgo = todayIdx - i
+    // Mark as done if within the current streak and not in the future
+    const done = daysAgo >= 0 && daysAgo < currentStreak.value
+    return { label, done }
+  })
+})
+
 const chessBoardBg = {
   backgroundImage: `repeating-conic-gradient(#ffffff 0% 25%, transparent 0% 50%)`,
   backgroundSize: '40px 40px',
 }
-
-const currentStreak = ref(7)
-const longestStreak = ref(21)
-const streakBonus = computed(() => Math.min(currentStreak.value * 5, 50))
-const streakDays = ref([
-  { label: 'M', done: true },
-  { label: 'T', done: true },
-  { label: 'W', done: true },
-  { label: 'T', done: true },
-  { label: 'F', done: true },
-  { label: 'S', done: true },
-  { label: 'S', done: false },
-])
 </script>
 
 <style scoped>
@@ -87,10 +99,6 @@ const streakDays = ref([
   0%, 100% { transform: scale(1); opacity: 0.4; }
   50% { transform: scale(1.25); opacity: 0; }
 }
-.animate-ping-slow {
-  animation: ping-slow 2.5s ease-in-out infinite;
-}
-.animate-ping-slower {
-  animation: ping-slower 3.5s ease-in-out infinite;
-}
+.animate-ping-slow   { animation: ping-slow   2.5s ease-in-out infinite; }
+.animate-ping-slower { animation: ping-slower 3.5s ease-in-out infinite; }
 </style>
