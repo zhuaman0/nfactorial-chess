@@ -163,12 +163,9 @@ const chessBoardBg = {
   backgroundSize: '40px 40px',
 }
 
-const userLevel  = ref(5)
-const levelTitle = ref('Brave Pawn')
-const xpCurrent  = ref(3200)
-const xpNext     = ref(5000)
-const streakDays = ref(4)
-const xpPercent  = computed(() => Math.min(100, Math.round((xpCurrent.value / xpNext.value) * 100)))
+const points     = computed(() => profileStore.profile?.points ?? 0)
+const streakDays = computed(() => profileStore.profile?.current_streak ?? 0)
+const { level: userLevel, title: levelTitle, xpCurrent, xpNext, xpPercent } = useLevel(points)
 
 const navItems = [
   { icon: '🏠', label: 'Home',        sub: 'Dashboard & overview',   to: '/'           },

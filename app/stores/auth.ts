@@ -97,11 +97,12 @@ export const useAuthStore = defineStore('auth', {
         })
         if (error) throw error
 
-        // If user was created, update their profile with name
+        // If user was created, update their profile with name and starter gold
         if (data.user) {
           const profileUpdate = {
             first_name: firstName,
             last_name: lastName,
+            gold_balance: 500,
             updated_at: new Date().toISOString(),
           }
           await supabase
